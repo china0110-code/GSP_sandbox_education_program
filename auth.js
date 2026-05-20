@@ -2,17 +2,17 @@
    auth.js — 認証・ユーザ管理共通処理
    ============================================================ */
 import { auth, db } from "./firebase.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
-  updatePassword,
-  deleteUser,
   sendPasswordResetEmail,
+  getAuth,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, setDoc, getDoc, deleteDoc, serverTimestamp,
+  doc, setDoc, getDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ----------------------------------------------------------
@@ -28,7 +28,6 @@ export async function logout() {
 
 /* ----------------------------------------------------------
    認証状態監視
-   callback(user | null) を呼ぶ
    ---------------------------------------------------------- */
 export function watchAuth(callback) {
   return onAuthStateChanged(auth, callback);
@@ -46,29 +45,55 @@ export async function getMyProfile() {
 
 /* ----------------------------------------------------------
    ユーザ登録（管理者が実行）
-   email / password / name / role / department / targetGroup
+   第2Firebaseインスタンスでユーザ作成→即サインアウト
+   → メインインスタンスの管理者セッションを維持
    ---------------------------------------------------------- */
 export async function registerUser({ email, password, name, role, department, targetGroup }) {
-  /* 一時的に別のAuth instanceでユーザ作成し、管理者セッションを維持 */
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  const uid  = cred.user.uid;
+  /* 第2インスタンス用のFirebase設定（firebase.jsと同じ値） */
+  const firebaseConfig = {
+    apiKey:            "AIzaSyA3DmRsJBHg_LagKEGzkAU7F0ItqyZsMj4",
+    authDomain:        "gsp-education.firebaseapp.com",
+    projectId:         "gsp-education",
+    storageBucket:     "gsp-education.firebasestorage.app",
+    messagingSenderId: "439766079947",
+    appId:             "1:439766079947:web:efe79f6cde4cc36e64be4e",
+  };
 
-  await setDoc(doc(db, 'users', uid), {
-    name,
-    email,
-    role,          // 'learner' | 'admin'
-    department,
-    targetGroup,   // 診断ツールの対象者区分キーと整合
-    createdAt: serverTimestamp(),
-  });
+  /* 既存アプリと名前が衝突しないよう一意な名前を付ける */
+  const tempAppName = `temp-register-${Date.now()}`;
+  const tempApp  = initializeApp(firebaseConfig, tempAppName);
+  const tempAuth = getAuth(tempApp);
 
-  return uid;
+  try {
+    /* 第2インスタンスでユーザ作成（メインのセッションに影響しない） */
+    const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+    const uid  = cred.user.uid;
+
+    /* Firestoreへの書き込みはメインインスタンスの管理者権限で行う */
+    await setDoc(doc(db, 'users', uid), {
+      name,
+      email,
+      role,
+      department,
+      targetGroup,
+      createdAt: serverTimestamp(),
+    });
+
+    /* 第2インスタンスを即サインアウト・削除 */
+    await signOut(tempAuth);
+    await tempApp.delete();
+
+    return uid;
+
+  } catch (e) {
+    /* エラー時もクリーンアップ */
+    try { await signOut(tempAuth); await tempApp.delete(); } catch (_) {}
+    throw e;
+  }
 }
 
 /* ----------------------------------------------------------
-   ユーザ削除（管理者が実行）
-   ※ Firebase Admin SDKなしでの削除はユーザ自身のみ可能なため、
-      Firestoreの論理削除（deletedAt）で対応する
+   ユーザ論理削除（管理者が実行）
    ---------------------------------------------------------- */
 export async function softDeleteUser(uid) {
   await setDoc(doc(db, 'users', uid), { deletedAt: serverTimestamp() }, { merge: true });
