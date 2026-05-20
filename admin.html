@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者画面 — AI活用教育プログラム</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ---- タブ ---- */
+    .admin-tabs {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .admin-tab {
+      padding: .55rem 1.2rem;
+      border: none;
+      border-bottom: 2.5px solid transparent;
+      background: transparent;
+      font-family: var(--ff-sans);
+      font-size: .87rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: -1px;
+    }
+
+    .admin-tab.active {
+      color: var(--ink);
+      border-bottom-color: var(--gold);
+    }
+
+    .admin-tab:hover:not(.active) { color: var(--ink); }
+
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    /* ---- サマリーチップ ---- */
+    .admin-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .admin-chip {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 18px 20px;
+      box-shadow: var(--sh);
+    }
+
+    .admin-chip-n {
+      font-family: var(--ff-serif);
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: var(--ink-soft);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .admin-chip-l {
+      font-size: .7rem;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* ---- ユーザ登録フォーム ---- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 20px;
+    }
+
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+    /* ---- テーブル操作行 ---- */
+    .tbl-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tbl-search {
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      font-family: var(--ff-sans);
+      font-size: .85rem;
+      width: 240px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    .tbl-search:focus { border-color: var(--ink-soft); }
+
+    /* ---- 進捗バー（テーブル内） ---- */
+    .mini-prog {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+    }
+
+    .mini-prog-bar {
+      flex: 1;
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .mini-prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ink-soft), var(--gold));
+      border-radius: 99px;
+    }
+
+    .mini-prog-pct {
+      font-size: .72rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      width: 2.5em;
+      text-align: right;
+    }
+
+    /* ---- 修了証モーダル ---- */
+    .cert-preview {
+      background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+      border-radius: var(--r-md);
+      padding: 40px;
+      text-align: center;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .cert-title {
+      font-family: var(--ff-serif);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--gold-lt);
+      letter-spacing: .08em;
+      margin-bottom: 8px;
+    }
+
+    .cert-sub {
+      font-size: .75rem;
+      color: rgba(255,255,255,.45);
+      letter-spacing: .12em;
+      margin-bottom: 24px;
+    }
+
+    .cert-name {
+      font-family: var(--ff-serif);
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .cert-body {
+      font-size: .82rem;
+      color: rgba(255,255,255,.6);
+      line-height: 1.8;
+      margin-bottom: 20px;
+    }
+
+    .cert-course {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold-lt);
+      margin-bottom: 4px;
+    }
+
+    .cert-date {
+      font-size: .75rem;
+      color: rgba(255,255,255,.4);
+    }
+
+    /* ---- レポートグリッド ---- */
+    .report-axis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .report-axis-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 16px 18px;
+    }
+
+    .report-axis-label {
+      font-size: .78rem;
+      font-weight: 700;
+      color: #fff;
+      padding: .22rem .6rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    .report-axis-pct {
+      font-family: var(--ff-serif);
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: var(--ink-soft);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .report-axis-sub { font-size: .72rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="admin.html" class="topbar-logo">AI活用教育プログラム</a>
+  <div class="topbar-nav">
+    <span class="topbar-role">管理者</span>
+    <span class="topbar-user" id="topbarUser"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="au au1">
+    <div class="page-title">管理者画面</div>
+    <div class="page-sub">ユーザ管理・受講状況の確認・修了証の発行を行います。</div>
+  </div>
+
+  <!-- タブ -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-tab="report">📊 受講状況レポート</button>
+    <button class="admin-tab" data-tab="users">👥 ユーザ管理</button>
+    <button class="admin-tab" data-tab="register">➕ ユーザ登録</button>
+    <button class="admin-tab" data-tab="cert">🏆 修了証発行</button>
+  </div>
+
+  <!-- ① 受講状況レポート -->
+  <div class="admin-panel active" data-tab="report">
+
+    <div class="admin-summary" id="reportSummary">
+      <div class="loading"><div class="spinner"></div>集計中…</div>
+    </div>
+
+    <!-- 軸別受講率 -->
+    <div class="card au au2">
+      <div class="card-head">軸別 受講完了率</div>
+      <div class="report-axis-grid" id="axisReport">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ユーザ別進捗テーブル -->
+    <div class="card au au3">
+      <div class="card-head">ユーザ別 受講進捗</div>
+      <div class="tbl-toolbar">
+        <input class="tbl-search" type="text" placeholder="名前・部門で絞り込み…"
+               oninput="filterReportTable(this.value)">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">CSVエクスポート</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="reportTable">
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>部門</th>
+              <th>対象者区分</th>
+              <th>完了講座数</th>
+              <th>全体進捗</th>
+              <th>クイズ合格数</th>
+            </tr>
+          </thead>
+          <tbody id="reportTbody">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted)">読み込み中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② ユーザ管理 -->
+  <div class="admin-panel" data-tab="users">
+    <div class="card au">
+      <div class="card-head">登録ユーザ一覧</div>
+      <div class="tbl-toolbar">
+        <input class="tbl-search" type="text" placeholder="名前・メールで絞り込み…"
+               oninput="filterUserTable(this.value)">
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="userTable">
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>メールアドレス</th>
+              <th>ロール</th>
+              <th>部門</th>
+              <th>対象者区分</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="userTbody">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted)">読み込み中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ ユーザ登録 -->
+  <div class="admin-panel" data-tab="register">
+    <div class="card au" style="max-width:640px">
+      <div class="card-head">新規ユーザ登録</div>
+
+      <div id="regErr" class="err-msg"></div>
+      <div id="regOk" class="err-msg" style="background:#f0fbf5;border-color:#bbf7d0;color:var(--green)"></div>
+
+      <div class="form-grid">
+        <div class="fg">
+          <label>氏名 *</label>
+          <input type="text" id="regName" placeholder="山田 太郎">
+        </div>
+        <div class="fg">
+          <label>メールアドレス *</label>
+          <input type="email" id="regEmail" placeholder="taro@company.com">
+        </div>
+        <div class="fg">
+          <label>パスワード * （8文字以上）</label>
+          <input type="password" id="regPassword" placeholder="初期パスワード">
+        </div>
+        <div class="fg">
+          <label>ロール *</label>
+          <select id="regRole">
+            <option value="learner">学習者</option>
+            <option value="admin">管理者</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>部門</label>
+          <input type="text" id="regDept" placeholder="営業部、情報システム部 など">
+        </div>
+        <div class="fg">
+          <label>対象者区分 *</label>
+          <select id="regTarget">
+            <option value="all">全社員</option>
+            <option value="exec">経営層</option>
+            <option value="mgmt">管理職</option>
+            <option value="legal">法務・コンプライアンス担当</option>
+            <option value="it">情報システム部門</option>
+            <option value="dx">DX推進部門</option>
+            <option value="data_user">業務部門のデータ利活用担当</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+        <button class="btn btn-ghost" onclick="clearRegForm()">クリア</button>
+        <button class="btn btn-primary" id="regBtn" onclick="registerUser()">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 修了証発行 -->
+  <div class="admin-panel" data-tab="cert">
+    <div class="card au" style="max-width:640px">
+      <div class="card-head">修了証発行</div>
+      <p style="font-size:.84rem;color:var(--muted);margin-bottom:20px;line-height:1.7">
+        講座を完了したユーザに対して修了証を発行します。印刷またはPDFとして保存できます。
+      </p>
+
+      <div class="form-grid">
+        <div class="fg">
+          <label>ユーザを選択</label>
+          <select id="certUser"></select>
+        </div>
+        <div class="fg">
+          <label>講座を選択</label>
+          <select id="certCourse"></select>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
+        <button class="btn btn-gold" onclick="previewCert()">プレビュー・印刷</button>
+      </div>
+
+      <div id="certPreviewArea" style="display:none">
+        <div class="cert-preview" id="certPreviewContent">
+          <!-- JS で描画 -->
+        </div>
+        <div style="display:flex;justify-content:center;gap:12px">
+          <button class="btn btn-primary" onclick="printCert()">🖨 印刷 / PDF保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 削除確認モーダル -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">⚠️ ユーザを削除しますか？</div>
+    <p style="font-size:.87rem;color:var(--muted);line-height:1.7">
+      このユーザのアクセスを無効化します。受講履歴は保持されます。<br>
+      この操作は取り消せません。
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAdmin, logout, registerUser as authRegister, softDeleteUser } from "./auth.js";
+  import { getAllUsers, getOrgProgress, getQuizResults } from "./db.js";
+
+  const TARGET_LABELS = {
+    all:'全社員', exec:'経営層', mgmt:'管理職',
+    legal:'法務・コンプライアンス担当', it:'情報システム部門',
+    dx:'DX推進部門', data_user:'業務部門のデータ利活用担当',
+  };
+
+  const AXIS_COLORS = {
+    data:'#1a5276', tech:'#1a4a3a', people:'#4a2070',
+    org:'#145232', gov:'#7e2020', culture:'#7e5109',
+  };
+
+  const AXIS_LABELS = {
+    data:'データ', tech:'テクノロジー', people:'人材',
+    org:'組織', gov:'ガバナンス', culture:'文化',
+  };
+
+  let profile   = null;
+  let allUsers  = [];
+  let allCourses = [];
+  let orgData   = [];
+  let pendingDeleteUid = null;
+
+  /* ---- 初期化 ---- */
+  async function init() {
+    profile = await requireAdmin();
+    document.getElementById('topbarUser').textContent = profile.name;
+
+    const [users, courses] = await Promise.all([
+      getAllUsers(),
+      fetch('./data/courses.json').then(r => r.json()),
+    ]);
+
+    allUsers   = users;
+    allCourses = courses;
+    orgData    = await getOrgProgress(users);
+
+    renderReport();
+    renderUserTable(allUsers);
+    renderCertSelects();
+  }
+
+  /* ---- ① レポート ---- */
+  function renderReport() {
+    const total     = allUsers.length;
+    const totalCourses = allCourses.length;
+
+    /* サマリー集計 */
+    let completedSum = 0, passedSum = 0;
+    orgData.forEach(u => {
+      completedSum += Object.values(u.progress).filter(p => p.status === 'completed').length;
+      passedSum    += Object.values(u.quizzes).filter(q => q.passed).length;
+    });
+
+    const avgComp = total > 0 ? Math.round(completedSum / total) : 0;
+    const overallPct = total > 0 ? Math.round(completedSum / (total * totalCourses) * 100) : 0;
+
+    document.getElementById('reportSummary').innerHTML = `
+      <div class="admin-chip">
+        <div class="admin-chip-n">${total}</div>
+        <div class="admin-chip-l">登録ユーザ数</div>
+      </div>
+      <div class="admin-chip">
+        <div class="admin-chip-n">${overallPct}<span style="font-size:1rem;color:var(--muted)">%</span></div>
+        <div class="admin-chip-l">全体受講率</div>
+      </div>
+      <div class="admin-chip">
+        <div class="admin-chip-n">${avgComp}</div>
+        <div class="admin-chip-l">平均完了講座数</div>
+      </div>
+      <div class="admin-chip">
+        <div class="admin-chip-n">${passedSum}</div>
+        <div class="admin-chip-l">クイズ合格累計</div>
+      </div>
+    `;
+
+    /* 軸別受講率 */
+    const axisIds = ['data','tech','people','org','gov','culture'];
+    const axisHtml = axisIds.map(axisId => {
+      const axisCourses = allCourses.filter(c => c.axis === axisId);
+      if (axisCourses.length === 0) return '';
+      let compCount = 0;
+      orgData.forEach(u => {
+        axisCourses.forEach(c => {
+          if (u.progress[c.id]?.status === 'completed') compCount++;
+        });
+      });
+      const denominator = total * axisCourses.length;
+      const pct = denominator > 0 ? Math.round(compCount / denominator * 100) : 0;
+      return `
+      <div class="report-axis-card">
+        <span class="report-axis-label" style="background:${AXIS_COLORS[axisId]}">${AXIS_LABELS[axisId]}</span>
+        <div class="report-axis-pct">${pct}<span style="font-size:1rem;color:var(--muted)">%</span></div>
+        <div class="report-axis-sub">${axisCourses.length}講座 / ${compCount}件完了</div>
+        <div class="prog-bar" style="margin-top:10px">
+          <div class="prog-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('axisReport').innerHTML = axisHtml;
+
+    /* ユーザ別テーブル */
+    renderReportTable(orgData);
+  }
+
+  function renderReportTable(data) {
+    document.getElementById('reportTbody').innerHTML = data.map(u => {
+      const comp  = Object.values(u.progress).filter(p => p.status === 'completed').length;
+      const pct   = allCourses.length > 0 ? Math.round(comp / allCourses.length * 100) : 0;
+      const passed = Object.values(u.quizzes).filter(q => q.passed).length;
+      return `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.department || '—'}</td>
+        <td><span class="badge badge-muted">${TARGET_LABELS[u.targetGroup] || u.targetGroup}</span></td>
+        <td>${comp} / ${allCourses.length}</td>
+        <td>
+          <div class="mini-prog">
+            <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
+            <span class="mini-prog-pct">${pct}%</span>
+          </div>
+        </td>
+        <td>${passed}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted)">データなし</td></tr>`;
+  }
+
+  window.filterReportTable = function(q) {
+    const filtered = orgData.filter(u =>
+      u.name?.includes(q) || u.department?.includes(q)
+    );
+    renderReportTable(filtered);
+  };
+
+  /* ---- ② ユーザ管理テーブル ---- */
+  function renderUserTable(users) {
+    document.getElementById('userTbody').innerHTML = users.map(u => `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td style="font-size:.82rem;color:var(--muted)">${u.email}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-ink' : 'badge-muted'}">
+          ${u.role === 'admin' ? '管理者' : '学習者'}
+        </span></td>
+        <td>${u.department || '—'}</td>
+        <td><span class="badge badge-muted">${TARGET_LABELS[u.targetGroup] || u.targetGroup}</span></td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.uid}', '${u.name}')">
+            削除
+          </button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted)">ユーザなし</td></tr>`;
+  }
+
+  window.filterUserTable = function(q) {
+    const filtered = allUsers.filter(u =>
+      u.name?.includes(q) || u.email?.includes(q)
+    );
+    renderUserTable(filtered);
+  };
+
+  /* ---- ③ ユーザ登録 ---- */
+  window.registerUser = async function() {
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const role     = document.getElementById('regRole').value;
+    const dept     = document.getElementById('regDept').value.trim();
+    const target   = document.getElementById('regTarget').value;
+
+    const errEl = document.getElementById('regErr');
+    const okEl  = document.getElementById('regOk');
+    errEl.classList.remove('show');
+    okEl.classList.remove('show');
+
+    if (!name || !email || !password || !target) {
+      errEl.textContent = '必須項目（*）をすべて入力してください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    if (password.length < 8) {
+      errEl.textContent = 'パスワードは8文字以上で入力してください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('regBtn');
+    btn.disabled = true;
+    btn.textContent = '登録中…';
+
+    try {
+      await authRegister({ email, password, name, role, department: dept, targetGroup: target });
+      okEl.textContent = `${name} さんを登録しました。`;
+      okEl.classList.add('show');
+      clearRegForm();
+
+      /* ユーザ一覧を再取得 */
+      allUsers = await getAllUsers();
+      orgData  = await getOrgProgress(allUsers);
+      renderUserTable(allUsers);
+    } catch (e) {
+      const msg = e.code === 'auth/email-already-in-use'
+        ? 'このメールアドレスは既に使用されています。'
+        : `登録に失敗しました：${e.message}`;
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '登録する';
+    }
+  };
+
+  window.clearRegForm = function() {
+    ['regName','regEmail','regPassword','regDept'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('regRole').value   = 'learner';
+    document.getElementById('regTarget').value = 'all';
+  };
+
+  /* ---- 削除モーダル ---- */
+  window.confirmDelete = function(uid, name) {
+    pendingDeleteUid = uid;
+    document.getElementById('deleteModal').classList.add('open');
+    document.getElementById('deleteConfirmBtn').textContent = `「${name}」を削除する`;
+    document.getElementById('deleteConfirmBtn').onclick = async () => {
+      await softDeleteUser(pendingDeleteUid);
+      closeModal();
+      allUsers = allUsers.filter(u => u.uid !== pendingDeleteUid);
+      orgData  = orgData.filter(u => u.uid !== pendingDeleteUid);
+      renderUserTable(allUsers);
+      renderReport();
+    };
+  };
+
+  window.closeModal = function() {
+    document.getElementById('deleteModal').classList.remove('open');
+    pendingDeleteUid = null;
+  };
+
+  /* ---- ④ 修了証 ---- */
+  function renderCertSelects() {
+    const userSel = document.getElementById('certUser');
+    userSel.innerHTML = `<option value="">ユーザを選択…</option>` +
+      allUsers.map(u => `<option value="${u.uid}">${u.name}</option>`).join('');
+
+    const courseSel = document.getElementById('certCourse');
+    courseSel.innerHTML = `<option value="">講座を選択…</option>` +
+      allCourses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  }
+
+  window.previewCert = function() {
+    const uid      = document.getElementById('certUser').value;
+    const courseId = document.getElementById('certCourse').value;
+
+    if (!uid || !courseId) {
+      alert('ユーザと講座を選択してください。');
+      return;
+    }
+
+    const user   = allUsers.find(u => u.uid === uid);
+    const course = allCourses.find(c => c.id === courseId);
+    const uData  = orgData.find(u => u.uid === uid);
+    const status = uData?.progress[courseId]?.status;
+
+    if (status !== 'completed') {
+      alert('この講座はまだ完了していません。');
+      return;
+    }
+
+    const completedAt = uData?.progress[courseId]?.completedAt?.toDate?.()
+      || new Date();
+    const dateStr = completedAt.toLocaleDateString('ja-JP', {
+      year:'numeric', month:'long', day:'numeric'
+    });
+
+    document.getElementById('certPreviewContent').innerHTML = `
+      <div class="cert-title">修 了 証</div>
+      <div class="cert-sub">CERTIFICATE OF COMPLETION</div>
+      <div class="cert-name">${user.name} 様</div>
+      <div class="cert-body">
+        以下のAI活用教育プログラムを修了されたことを<br>ここに証します。
+      </div>
+      <div class="cert-course">${course.title}</div>
+      <div style="margin:16px 0;border-top:1px solid rgba(255,255,255,.15)"></div>
+      <div class="cert-date">修了日：${dateStr}</div>
+    `;
+
+    document.getElementById('certPreviewArea').style.display = 'block';
+    document.getElementById('certPreviewArea').scrollIntoView({ behavior:'smooth' });
+  };
+
+  window.printCert = function() {
+    window.print();
+  };
+
+  /* ---- CSVエクスポート ---- */
+  window.exportCSV = function() {
+    const header = ['名前','部門','対象者区分','完了講座数','全体進捗(%)', 'クイズ合格数'];
+    const rows = orgData.map(u => {
+      const comp  = Object.values(u.progress).filter(p => p.status === 'completed').length;
+      const pct   = allCourses.length > 0 ? Math.round(comp / allCourses.length * 100) : 0;
+      const passed = Object.values(u.quizzes).filter(q => q.passed).length;
+      return [u.name, u.department || '', TARGET_LABELS[u.targetGroup] || '', comp, pct, passed];
+    });
+
+    const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `受講状況_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /* ---- タブ切り替え ---- */
+  document.querySelectorAll('.admin-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector(`.admin-panel[data-tab="${btn.dataset.tab}"]`)?.classList.add('active');
+    });
+  });
+
+  /* ---- ログアウト ---- */
+  window.doLogout = async function() {
+    await logout();
+    location.href = 'index.html';
+  };
+
+  init();
+</script>
+
+</body>
+</html>

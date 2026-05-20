@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダッシュボード — AI活用教育プログラム</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ---- サマリーグリッド ---- */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .summary-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 20px 22px;
+      box-shadow: var(--sh);
+    }
+
+    .summary-n {
+      font-family: var(--ff-serif);
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--ink-soft);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .summary-l {
+      font-size: .72rem;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    /* ---- 講座カードグリッド ---- */
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .course-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+      box-shadow: var(--sh);
+      display: flex;
+      flex-direction: column;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .course-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(11,22,40,.12);
+    }
+
+    .course-card-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .course-card-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .course-card-body {
+      padding: 16px 20px;
+      flex: 1;
+    }
+
+    .course-title {
+      font-size: .97rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .course-desc {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 14px;
+    }
+
+    .course-meta {
+      display: flex;
+      gap: 16px;
+      font-size: .74rem;
+      color: var(--muted);
+    }
+
+    .course-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .course-card-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--slate);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .course-progress-wrap {
+      flex: 1;
+    }
+
+    .course-progress-label {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    /* ---- 推奨バッジ ---- */
+    .recommended-banner {
+      background: var(--gold-pale);
+      border: 1px solid rgba(184,146,42,.35);
+      border-radius: var(--r-sm);
+      padding: 12px 16px;
+      font-size: .82rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ---- フィルタタブ ---- */
+    .filter-tabs {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .filter-tab {
+      padding: .4rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      background: transparent;
+      font-size: .8rem;
+      font-family: var(--ff-sans);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .filter-tab.active {
+      background: var(--ink);
+      color: var(--gold-lt);
+      border-color: var(--ink);
+    }
+
+    .filter-tab:hover:not(.active) {
+      border-color: var(--ink-soft);
+      color: var(--ink);
+    }
+
+    /* ---- 完了状態 ---- */
+    .course-card.completed {
+      border-color: rgba(30,110,69,.25);
+    }
+
+    .course-card.completed .course-card-header {
+      background: #f0fbf5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- トップバー -->
+<div class="topbar">
+  <a href="dashboard.html" class="topbar-logo">AI活用教育プログラム</a>
+  <div class="topbar-nav">
+    <span class="topbar-user" id="topbarUser"></span>
+    <span class="topbar-role" id="topbarRole"></span>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<!-- メインコンテンツ -->
+<div class="page">
+
+  <!-- ウェルカム -->
+  <div class="au au1">
+    <div class="page-title" id="welcomeTitle">ようこそ</div>
+    <div class="page-sub">あなたに推奨された講座を受講して、AI活用スキルを高めましょう。</div>
+  </div>
+
+  <!-- サマリー -->
+  <div class="summary-grid au au2" id="summaryGrid">
+    <div class="loading"><div class="spinner"></div>読み込み中…</div>
+  </div>
+
+  <!-- 講座一覧 -->
+  <div class="card au au3">
+    <div class="card-head">講座一覧</div>
+
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all">すべて</button>
+      <button class="filter-tab" data-filter="recommended">⭐ 推奨</button>
+      <button class="filter-tab" data-filter="in_progress">受講中</button>
+      <button class="filter-tab" data-filter="completed">✅ 完了</button>
+      <button class="filter-tab" data-filter="not_started">未受講</button>
+    </div>
+
+    <div id="courseGrid" class="course-grid">
+      <div class="loading"><div class="spinner"></div>講座を読み込み中…</div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { requireAuth, logout } from "./auth.js";
+  import { getProgress, getQuizResults } from "./db.js";
+
+  /* 対象者区分ラベル（診断ツールと整合） */
+  const TARGET_LABELS = {
+    all:       '全社員',
+    exec:      '経営層',
+    mgmt:      '管理職',
+    legal:     '法務・コンプライアンス担当',
+    it:        '情報システム部門',
+    dx:        'DX推進部門',
+    data_user: '業務部門のデータ利活用担当',
+  };
+
+  const AXIS_COLORS = {
+    data:    '#1a5276',
+    tech:    '#1a4a3a',
+    people:  '#4a2070',
+    org:     '#145232',
+    gov:     '#7e2020',
+    culture: '#7e5109',
+  };
+
+  const AXIS_LABELS = {
+    data:    'データ',
+    tech:    'テクノロジー',
+    people:  '人材',
+    org:     '組織',
+    gov:     'ガバナンス',
+    culture: '文化',
+  };
+
+  let allCourses = [];
+  let progress   = {};
+  let quizResults = {};
+  let profile    = null;
+  let currentFilter = 'all';
+
+  /* ---- 初期化 ---- */
+  async function init() {
+    profile = await requireAuth();
+
+    /* トップバー */
+    document.getElementById('topbarUser').textContent = profile.name;
+    document.getElementById('topbarRole').textContent =
+      profile.role === 'admin' ? '管理者' : '学習者';
+    document.getElementById('welcomeTitle').textContent =
+      `ようこそ、${profile.name}さん`;
+
+    /* データ取得 */
+    const [coursesRes, prog, quiz] = await Promise.all([
+      fetch('./data/courses.json').then(r => r.json()),
+      getProgress(profile.uid),
+      getQuizResults(profile.uid),
+    ]);
+
+    allCourses  = coursesRes;
+    progress    = prog;
+    quizResults = quiz;
+
+    renderSummary();
+    renderCourses('all');
+    initFilters();
+  }
+
+  /* ---- サマリー ---- */
+  function renderSummary() {
+    const total     = allCourses.length;
+    const completed = allCourses.filter(c => progress[c.id]?.status === 'completed').length;
+    const inProg    = allCourses.filter(c => progress[c.id]?.status === 'in_progress').length;
+    const passed    = Object.values(quizResults).filter(q => q.passed).length;
+
+    document.getElementById('summaryGrid').innerHTML = `
+      <div class="summary-card">
+        <div class="summary-n">${completed}<span style="font-size:1rem;color:var(--muted)"> / ${total}</span></div>
+        <div class="summary-l">講座完了数</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-n">${inProg}</div>
+        <div class="summary-l">受講中</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-n">${passed}</div>
+        <div class="summary-l">クイズ合格数</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-n">${total > 0 ? Math.round(completed / total * 100) : 0}<span style="font-size:1rem;color:var(--muted)">%</span></div>
+        <div class="summary-l">全体進捗率</div>
+      </div>
+    `;
+  }
+
+  /* ---- 講座一覧 ---- */
+  function renderCourses(filter) {
+    currentFilter = filter;
+
+    /* 推奨: プロフィールの targetGroup に合う講座 */
+    const recommended = allCourses.filter(c =>
+      c.targetGroups.includes(profile.targetGroup) || c.targetGroups.includes('all')
+    );
+
+    let courses = allCourses;
+    if (filter === 'recommended') courses = recommended;
+    else if (filter === 'in_progress') courses = allCourses.filter(c => progress[c.id]?.status === 'in_progress');
+    else if (filter === 'completed')   courses = allCourses.filter(c => progress[c.id]?.status === 'completed');
+    else if (filter === 'not_started') courses = allCourses.filter(c => !progress[c.id] || progress[c.id].status === 'not_started');
+
+    if (courses.length === 0) {
+      document.getElementById('courseGrid').innerHTML = `
+        <div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted);font-size:.87rem">
+          該当する講座はありません。
+        </div>`;
+      return;
+    }
+
+    document.getElementById('courseGrid').innerHTML = courses.map(c => {
+      const prog   = progress[c.id];
+      const status = prog?.status || 'not_started';
+      const quiz   = quizResults[c.id];
+      const isRec  = recommended.some(r => r.id === c.id);
+
+      const statusBadge = status === 'completed'
+        ? `<span class="badge badge-green">✅ 完了</span>`
+        : status === 'in_progress'
+        ? `<span class="badge badge-gold">受講中</span>`
+        : `<span class="badge badge-muted">未受講</span>`;
+
+      const quizBadge = quiz
+        ? quiz.passed
+          ? `<span class="badge badge-green">合格 ${quiz.score}/${quiz.total}</span>`
+          : `<span class="badge badge-red">不合格 ${quiz.score}/${quiz.total}</span>`
+        : '';
+
+      const pct = status === 'completed' ? 100 : status === 'in_progress' ? 50 : 0;
+
+      return `
+      <div class="course-card ${status === 'completed' ? 'completed' : ''}">
+        <div class="course-card-header">
+          <div class="course-card-chips">
+            <span class="axis-chip" style="background:${AXIS_COLORS[c.axis]}">${AXIS_LABELS[c.axis]}</span>
+            <span class="phase-chip phase-${c.phase}">Phase ${c.phase}</span>
+            ${isRec ? `<span class="badge badge-gold">⭐ 推奨</span>` : ''}
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="course-card-body">
+          <div class="course-title">${c.title}</div>
+          <div class="course-desc">${c.description}</div>
+          <div class="course-meta">
+            <span>⏱ ${c.duration}分</span>
+            <span>📝 合格基準 ${c.passingScore}%</span>
+            <span>📚 ${c.sections.length}セクション</span>
+          </div>
+        </div>
+        <div class="course-card-footer">
+          <div class="course-progress-wrap">
+            <div class="course-progress-label">${pct}% 完了 ${quizBadge}</div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          </div>
+          <a href="course.html?id=${c.id}" class="btn btn-primary btn-sm">
+            ${status === 'not_started' ? '受講開始' : status === 'in_progress' ? '続きから' : '復習する'}
+          </a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- フィルタタブ ---- */
+  function initFilters() {
+    document.querySelectorAll('.filter-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCourses(btn.dataset.filter);
+      });
+    });
+  }
+
+  /* ---- ログアウト ---- */
+  window.doLogout = async function () {
+    await logout();
+    window.location.href = 'index.html';
+  };
+
+  init();
+</script>
+
+</body>
+</html>

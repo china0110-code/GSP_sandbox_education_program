@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>講座 — AI活用教育プログラム</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .course-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ---- サイドバー ---- */
+    .sidebar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      box-shadow: var(--sh);
+      position: sticky;
+      top: 78px;
+    }
+
+    .sidebar-title {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .section-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .section-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      font-size: .83rem;
+      color: var(--muted);
+      transition: all .15s;
+      border: 1px solid transparent;
+    }
+
+    .section-item:hover { background: var(--slate); color: var(--ink); }
+
+    .section-item.active {
+      background: var(--ink);
+      color: var(--gold-lt);
+      border-color: var(--ink);
+    }
+
+    .section-item.done { color: var(--green); }
+    .section-item.done::before { content: '✅'; font-size: .75rem; }
+    .section-item:not(.done)::before { content: '○'; font-size: .75rem; color: var(--border); }
+    .section-item.active::before { content: '▶'; font-size: .7rem; color: var(--gold-lt); }
+
+    .sidebar-quiz {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ---- メインコンテンツ ---- */
+    .content-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 36px 40px;
+      box-shadow: var(--sh);
+    }
+
+    .content-eyebrow {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .content-title {
+      font-family: var(--ff-serif);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .content-body {
+      font-size: .93rem;
+      line-height: 2;
+      color: var(--ink);
+      min-height: 280px;
+    }
+
+    .content-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .content-progress {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+
+    /* ---- 完了バナー ---- */
+    .complete-banner {
+      background: #f0fbf5;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--r-md);
+      padding: 24px 28px;
+      text-align: center;
+      margin-top: 32px;
+    }
+
+    .complete-banner-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .complete-banner-title {
+      font-family: var(--ff-serif);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .complete-banner-desc { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
+
+    .complete-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 700px) {
+      .course-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .content-card { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="dashboard.html" class="topbar-logo">AI活用教育プログラム</a>
+  <div class="topbar-nav">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← ダッシュボードに戻る</a>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- コース情報ヘッダー -->
+  <div class="au au1" id="courseHeader" style="margin-bottom:24px">
+    <div class="loading"><div class="spinner"></div>読み込み中…</div>
+  </div>
+
+  <div class="course-layout">
+    <!-- サイドバー -->
+    <div class="sidebar au au2">
+      <div class="sidebar-title">セクション</div>
+      <ul class="section-list" id="sectionList"></ul>
+      <div class="sidebar-quiz" id="sidebarQuiz"></div>
+    </div>
+
+    <!-- コンテンツエリア -->
+    <div class="au au3">
+      <div class="content-card" id="contentArea">
+        <div class="loading"><div class="spinner"></div>コンテンツを読み込み中…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { requireAuth, logout } from "./auth.js";
+  import { startCourse, completeCourse, getProgress, getQuizResults } from "./db.js";
+
+  const AXIS_COLORS = {
+    data:'#1a5276', tech:'#1a4a3a', people:'#4a2070',
+    org:'#145232', gov:'#7e2020', culture:'#7e5109',
+  };
+  const AXIS_LABELS = {
+    data:'データ', tech:'テクノロジー', people:'人材',
+    org:'組織', gov:'ガバナンス', culture:'文化',
+  };
+
+  let profile   = null;
+  let course    = null;
+  let progress  = {};
+  let quizResult = null;
+  let currentSection = 0;
+  const viewedSections = new Set();
+
+  async function init() {
+    profile = await requireAuth();
+
+    const params   = new URLSearchParams(location.search);
+    const courseId = params.get('id');
+    if (!courseId) { location.href = 'dashboard.html'; return; }
+
+    const courses = await fetch('./data/courses.json').then(r => r.json());
+    course = courses.find(c => c.id === courseId);
+    if (!course) { location.href = 'dashboard.html'; return; }
+
+    const [prog, quiz] = await Promise.all([
+      getProgress(profile.uid),
+      getQuizResults(profile.uid),
+    ]);
+    progress   = prog;
+    quizResult = quiz[courseId] || null;
+
+    /* 受講開始記録 */
+    await startCourse(profile.uid, courseId);
+
+    renderHeader();
+    renderSidebar();
+    showSection(0);
+  }
+
+  function renderHeader() {
+    document.title = `${course.title} — AI活用教育プログラム`;
+    document.getElementById('courseHeader').innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span class="axis-chip" style="background:${AXIS_COLORS[course.axis]}">${AXIS_LABELS[course.axis]}</span>
+        <span class="phase-chip phase-${course.phase}">Phase ${course.phase}</span>
+        <span style="font-size:.78rem;color:var(--muted)">⏱ 約${course.duration}分</span>
+      </div>
+      <div class="page-title">${course.title}</div>
+      <div class="page-sub">${course.description}</div>
+    `;
+  }
+
+  function renderSidebar() {
+    const status = progress[course.id]?.status || 'not_started';
+
+    document.getElementById('sectionList').innerHTML = course.sections.map((s, i) => `
+      <li class="section-item ${i === currentSection ? 'active' : ''}"
+          id="sec-item-${i}" onclick="showSection(${i})">
+        ${s.title}
+      </li>`).join('');
+
+    /* クイズリンク */
+    const quizHtml = quizResult
+      ? `<div style="font-size:.78rem;margin-bottom:8px">
+           ${quizResult.passed
+             ? `<span class="badge badge-green">✅ クイズ合格済み ${quizResult.score}/${quizResult.total}</span>`
+             : `<span class="badge badge-red">クイズ不合格 ${quizResult.score}/${quizResult.total}</span>`}
+         </div>
+         <a href="quiz.html?id=${course.id}" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center">
+           ${quizResult.passed ? 'クイズを再受験' : '再チャレンジ'}
+         </a>`
+      : `<a href="quiz.html?id=${course.id}" class="btn btn-primary btn-sm" style="width:100%;justify-content:center" id="quizBtn">
+           理解度チェック →
+         </a>`;
+
+    document.getElementById('sidebarQuiz').innerHTML = `
+      <div style="font-size:.74rem;color:var(--muted);margin-bottom:10px;font-weight:700;letter-spacing:.06em">理解度チェック</div>
+      ${quizHtml}
+    `;
+  }
+
+  window.showSection = function(index) {
+    currentSection = index;
+    viewedSections.add(index);
+
+    const s = course.sections[index];
+
+    /* サイドバー更新 */
+    document.querySelectorAll('.section-item').forEach((el, i) => {
+      el.className = `section-item${i === index ? ' active' : viewedSections.has(i) ? ' done' : ''}`;
+    });
+
+    const isLast   = index === course.sections.length - 1;
+    const allViewed = viewedSections.size === course.sections.length;
+
+    document.getElementById('contentArea').innerHTML = `
+      <div class="content-eyebrow">セクション ${index + 1} / ${course.sections.length}</div>
+      <div class="content-title">${s.title}</div>
+      <div class="content-body">${s.content || '<p style="color:var(--muted)">(このセクションのコンテンツは準備中です)</p>'}</div>
+      <div class="content-nav">
+        <div class="content-progress">
+          ${viewedSections.size} / ${course.sections.length} セクション閲覧済み
+        </div>
+        <div style="display:flex;gap:10px">
+          ${index > 0 ? `<button class="btn btn-ghost btn-sm" onclick="showSection(${index - 1})">← 前へ</button>` : ''}
+          ${!isLast
+            ? `<button class="btn btn-primary btn-sm" onclick="showSection(${index + 1})">次へ →</button>`
+            : allViewed
+              ? `<button class="btn btn-gold btn-sm" onclick="finishCourse()">✅ 受講完了 → クイズへ</button>`
+              : `<button class="btn btn-primary btn-sm" onclick="showSection(${index + 1})" disabled>次へ →</button>`
+          }
+        </div>
+      </div>
+      ${allViewed && isLast ? renderCompleteBanner() : ''}
+    `;
+  };
+
+  function renderCompleteBanner() {
+    const status = progress[course.id]?.status;
+    if (status === 'completed') return '';
+    return `
+    <div class="complete-banner">
+      <div class="complete-banner-icon">🎉</div>
+      <div class="complete-banner-title">全セクションを閲覧しました！</div>
+      <div class="complete-banner-desc">理解度チェッククイズを受けて講座を完了しましょう。</div>
+      <div class="complete-actions">
+        <a href="quiz.html?id=${course.id}" class="btn btn-gold">理解度チェックを受ける</a>
+        <a href="dashboard.html" class="btn btn-ghost">ダッシュボードに戻る</a>
+      </div>
+    </div>`;
+  }
+
+  window.finishCourse = async function() {
+    await completeCourse(profile.uid, course.id);
+    location.href = `quiz.html?id=${course.id}`;
+  };
+
+  window.doLogout = async function() {
+    const { logout } = await import('./auth.js');
+    await logout();
+    location.href = 'index.html';
+  };
+
+  init();
+</script>
+
+</body>
+</html>
