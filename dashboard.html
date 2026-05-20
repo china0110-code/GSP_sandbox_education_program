@@ -214,6 +214,7 @@
 
     <div class="filter-tabs" id="filterTabs">
       <button class="filter-tab active" data-filter="all">すべて</button>
+      <button class="filter-tab" data-filter="required">🔴 必須</button>
       <button class="filter-tab" data-filter="recommended">⭐ 推奨</button>
       <button class="filter-tab" data-filter="in_progress">受講中</button>
       <button class="filter-tab" data-filter="completed">✅ 完了</button>
@@ -324,13 +325,20 @@
   function renderCourses(filter) {
     currentFilter = filter;
 
-    /* 推奨: プロフィールの targetGroup に合う講座 */
+    /* 必須: requiredフィールドにtargetGroupまたはallが含まれる講座 */
+    const required = allCourses.filter(c =>
+      c.required?.includes(profile.targetGroup) || c.required?.includes('all')
+    );
+
+    /* 推奨: targetGroupsに合致するが必須ではない講座 */
     const recommended = allCourses.filter(c =>
-      c.targetGroups.includes(profile.targetGroup) || c.targetGroups.includes('all')
+      (c.targetGroups.includes(profile.targetGroup) || c.targetGroups.includes('all'))
+      && !(c.required?.includes(profile.targetGroup) || c.required?.includes('all'))
     );
 
     let courses = allCourses;
-    if (filter === 'recommended') courses = recommended;
+    if (filter === 'required')    courses = required;
+    else if (filter === 'recommended') courses = recommended;
     else if (filter === 'in_progress') courses = allCourses.filter(c => progress[c.id]?.status === 'in_progress');
     else if (filter === 'completed')   courses = allCourses.filter(c => progress[c.id]?.status === 'completed');
     else if (filter === 'not_started') courses = allCourses.filter(c => !progress[c.id] || progress[c.id].status === 'not_started');
@@ -347,7 +355,8 @@
       const prog   = progress[c.id];
       const status = prog?.status || 'not_started';
       const quiz   = quizResults[c.id];
-      const isRec  = recommended.some(r => r.id === c.id);
+      const isReq  = required.some(r => r.id === c.id);
+      const isRec  = !isReq && recommended.some(r => r.id === c.id);
 
       const statusBadge = status === 'completed'
         ? `<span class="badge badge-green">✅ 完了</span>`
@@ -369,7 +378,7 @@
           <div class="course-card-chips">
             <span class="axis-chip" style="background:${AXIS_COLORS[c.axis]}">${AXIS_LABELS[c.axis]}</span>
             <span class="phase-chip phase-${c.phase}">Phase ${c.phase}</span>
-            ${isRec ? `<span class="badge badge-gold">⭐ 推奨</span>` : ''}
+            ${isReq ? `<span class="badge badge-red">🔴 必須</span>` : isRec ? `<span class="badge badge-gold">⭐ 推奨</span>` : ''}
           </div>
           ${statusBadge}
         </div>
