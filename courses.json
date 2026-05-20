@@ -1,0 +1,326 @@
+[
+  {
+    "id": "people-01",
+    "axis": "people",
+    "phase": 1,
+    "title": "AIリテラシー基礎研修",
+    "description": "AI活用の共通言語を全社に普及させる起点となる研修です。AIが何をできて何をできないかの正確な期待値を形成します。",
+    "targetGroups": ["all"],
+    "duration": 60,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "people-01-s01",
+        "title": "AIとは何か",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "people-01-s02",
+        "title": "生成AIの仕組みと限界",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "people-01-s03",
+        "title": "業務でのAI活用事例",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "people-01-s04",
+        "title": "プロンプトの基本",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "people-02",
+    "axis": "people",
+    "phase": 1,
+    "title": "マインドセット変革ワークショップ",
+    "description": "AIと共生するための企業風土・マインドセットを醸成します。変化への抵抗感を解消し、AIを前向きに捉える文化を育てます。",
+    "targetGroups": ["all", "mgmt"],
+    "duration": 90,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "people-02-s01",
+        "title": "変化に対する心理的抵抗",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "people-02-s02",
+        "title": "AI時代のキャリアデザイン",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "people-02-s03",
+        "title": "他社のAI活用成功事例",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "gov-01",
+    "axis": "gov",
+    "phase": 1,
+    "title": "AI倫理・リスク管理研修",
+    "description": "個人情報保護・著作権・AI固有リスクへの対応力を習得します。ガイドライン策定とセットで進めることを推奨します。",
+    "targetGroups": ["exec", "mgmt", "legal"],
+    "duration": 60,
+    "passingScore": 80,
+    "sections": [
+      {
+        "id": "gov-01-s01",
+        "title": "AI利用に関わる法規制",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "gov-01-s02",
+        "title": "個人情報・機密情報の取り扱い",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "gov-01-s03",
+        "title": "著作権とAI生成物",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "gov-01-s04",
+        "title": "ハルシネーションとバイアス対策",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "culture-01",
+    "axis": "culture",
+    "phase": 1,
+    "title": "マインドセット変革ワークショップ（経営・管理職向け）",
+    "description": "外部講師・他社成功事例を活用した変革推進研修です。組織全体のAIへの期待感を経営層・管理職が率先して醸成します。",
+    "targetGroups": ["exec", "mgmt"],
+    "duration": 120,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "culture-01-s01",
+        "title": "経営層が果たすべきAI推進の役割",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "culture-01-s02",
+        "title": "変革を牽引するリーダーシップ",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "culture-01-s03",
+        "title": "小さな成功体験の設計と横展開",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "org-01",
+    "axis": "org",
+    "phase": 1,
+    "title": "AI推進体制設計研修",
+    "description": "推進組織の設計・権限設定・予算確保の実務を習得します。経営戦略との紐づけを意識した内容です。",
+    "targetGroups": ["exec", "mgmt"],
+    "duration": 90,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "org-01-s01",
+        "title": "AI推進組織の設計パターン",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "org-01-s02",
+        "title": "予算確保と投資対効果の考え方",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "org-01-s03",
+        "title": "ステークホルダーマネジメント",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "tech-01",
+    "axis": "tech",
+    "phase": 1,
+    "title": "AIツール選定・運用研修",
+    "description": "生成AIの安全な活用基盤整備・ポリシー策定を含む実務研修です。シャドーAI防止とセキュリティ確保を両立する知識を習得します。",
+    "targetGroups": ["it", "dx"],
+    "duration": 90,
+    "passingScore": 75,
+    "sections": [
+      {
+        "id": "tech-01-s01",
+        "title": "AIツールの選定基準",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "tech-01-s02",
+        "title": "シャドーAI防止策",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "tech-01-s03",
+        "title": "社内AIポリシーの策定",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "data-01",
+    "axis": "data",
+    "phase": 1,
+    "title": "データ品質・活用基礎研修",
+    "description": "データ収集・クレンジング・カタログ整備の実務スキルを習得します。AI活用の前提となるデータ基盤への理解を深めます。",
+    "targetGroups": ["dx", "data_user"],
+    "duration": 60,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "data-01-s01",
+        "title": "データ品質の考え方",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "data-01-s02",
+        "title": "データクレンジングの実務",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "data-01-s03",
+        "title": "データカタログの整備方法",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "culture-02",
+    "axis": "culture",
+    "phase": 2,
+    "title": "事例共有・変革推進ワークショップ",
+    "description": "Phase 1の成果を踏まえ、社内成功事例を積極的に活用してAI活用を自分事化する場として設計します。",
+    "targetGroups": ["all", "exec", "mgmt"],
+    "duration": 90,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "culture-02-s01",
+        "title": "Phase 1の振り返りと成果共有",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "culture-02-s02",
+        "title": "社内AI活用成功事例の深掘り",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "culture-02-s03",
+        "title": "次のフェーズに向けた行動計画",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "org-02",
+    "axis": "org",
+    "phase": 2,
+    "title": "AI推進体制設計研修（強化版）",
+    "description": "既存体制のレビューと強化を目的に実施します。全社AI推進の司令塔機能を強化します。",
+    "targetGroups": ["exec", "mgmt"],
+    "duration": 90,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "org-02-s01",
+        "title": "Phase 1体制の評価と課題整理",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "org-02-s02",
+        "title": "スケールアップのための組織設計",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "tech-02",
+    "axis": "tech",
+    "phase": 2,
+    "title": "AIツール活用高度化研修",
+    "description": "MLOps・セキュリティ・コスト最適化を含む応用研修です。現場への展開を支援する技術力の底上げを図ります。",
+    "targetGroups": ["it", "dx"],
+    "duration": 120,
+    "passingScore": 75,
+    "sections": [
+      {
+        "id": "tech-02-s01",
+        "title": "MLOpsの基礎と実装",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "tech-02-s02",
+        "title": "AIセキュリティの実践",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "tech-02-s03",
+        "title": "コスト最適化戦略",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "gov-02",
+    "axis": "gov",
+    "phase": 2,
+    "title": "AIガイドライン整備ワークショップ",
+    "description": "社内AI利用ポリシーの策定・周知徹底を目的に実施します。法令変化への継続的なキャッチアップ体制も整備します。",
+    "targetGroups": ["mgmt", "legal"],
+    "duration": 90,
+    "passingScore": 80,
+    "sections": [
+      {
+        "id": "gov-02-s01",
+        "title": "社内AIガイドラインの設計",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "gov-02-s02",
+        "title": "ガイドラインの周知・定着化",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  },
+  {
+    "id": "data-02",
+    "axis": "data",
+    "phase": 2,
+    "title": "データ分析・活用高度化研修",
+    "description": "BI活用・統計分析・AIモデル評価スキルの強化を目的に実施します。現場主導のデータ活用を促進します。",
+    "targetGroups": ["dx", "data_user"],
+    "duration": 120,
+    "passingScore": 70,
+    "sections": [
+      {
+        "id": "data-02-s01",
+        "title": "BIツールの実践活用",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "data-02-s02",
+        "title": "統計分析の基礎",
+        "content": "（コンテンツをここに記述）"
+      },
+      {
+        "id": "data-02-s03",
+        "title": "AIモデルの評価と改善",
+        "content": "（コンテンツをここに記述）"
+      }
+    ]
+  }
+]
