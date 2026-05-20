@@ -115,16 +115,8 @@
 </div>
 
 <script type="module">
-  import { login, watchAuth, sendReset } from "./auth.js";
+  import { login, sendReset } from "./auth.js";
   import { getMyProfile } from "./auth.js";
-
-  /* 既にログイン済みならリダイレクト */
-  watchAuth(async (user) => {
-    if (!user) return;
-    const profile = await getMyProfile();
-    if (!profile || profile.deletedAt) return;
-    redirect(profile.role);
-  });
 
   function redirect(role) {
     window.location.href = role === 'admin' ? 'admin.html' : 'dashboard.html';
@@ -136,11 +128,16 @@
     el.classList.add('show');
   }
 
+  function hideErr() {
+    document.getElementById('errMsg').classList.remove('show');
+  }
+
   window.doLogin = async function () {
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const btn      = document.getElementById('loginBtn');
 
+    hideErr();
     if (!email || !password) { showErr('メールアドレスとパスワードを入力してください。'); return; }
 
     btn.disabled = true;
@@ -148,7 +145,15 @@
 
     try {
       await login(email, password);
-      /* watchAuth が発火してリダイレクト */
+      /* ログイン成功後にプロフィール取得してリダイレクト */
+      const profile = await getMyProfile();
+      if (!profile || profile.deletedAt) {
+        showErr('このアカウントは無効化されています。管理者にお問い合わせください。');
+        btn.disabled = false;
+        btn.textContent = 'ログイン';
+        return;
+      }
+      redirect(profile.role);
     } catch (e) {
       btn.disabled = false;
       btn.textContent = 'ログイン';
