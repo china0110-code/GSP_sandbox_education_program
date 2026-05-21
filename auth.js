@@ -2,7 +2,7 @@
    auth.js — 認証・ユーザ管理共通処理
    ============================================================ */
 import { auth, db } from "./firebase.js";
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   signInWithEmailAndPassword,
   signOut,
@@ -45,11 +45,10 @@ export async function getMyProfile() {
 
 /* ----------------------------------------------------------
    ユーザ登録（管理者が実行）
-   第2Firebaseインスタンスでユーザ作成→即サインアウト
+   第2Firebaseインスタンスでユーザ作成→即サインアウト→インスタンス削除
    → メインインスタンスの管理者セッションを維持
    ---------------------------------------------------------- */
 export async function registerUser({ email, password, name, role, department, targetGroup }) {
-  /* 第2インスタンス用のFirebase設定（firebase.jsと同じ値） */
   const firebaseConfig = {
     apiKey:            "AIzaSyA3DmRsJBHg_LagKEGzkAU7F0ItqyZsMj4",
     authDomain:        "gsp-education.firebaseapp.com",
@@ -59,13 +58,11 @@ export async function registerUser({ email, password, name, role, department, ta
     appId:             "1:439766079947:web:efe79f6cde4cc36e64be4e",
   };
 
-  /* 既存アプリと名前が衝突しないよう一意な名前を付ける */
   const tempAppName = `temp-register-${Date.now()}`;
   const tempApp  = initializeApp(firebaseConfig, tempAppName);
   const tempAuth = getAuth(tempApp);
 
   try {
-    /* 第2インスタンスでユーザ作成（メインのセッションに影響しない） */
     const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
     const uid  = cred.user.uid;
 
@@ -79,15 +76,14 @@ export async function registerUser({ email, password, name, role, department, ta
       createdAt: serverTimestamp(),
     });
 
-    /* 第2インスタンスを即サインアウト・削除 */
+    /* 第2インスタンスをサインアウト→削除（deleteApp を使用） */
     await signOut(tempAuth);
-    await tempApp.delete();
+    await deleteApp(tempApp);
 
     return uid;
 
   } catch (e) {
-    /* エラー時もクリーンアップ */
-    try { await signOut(tempAuth); await tempApp.delete(); } catch (_) {}
+    try { await signOut(tempAuth); await deleteApp(tempApp); } catch (_) {}
     throw e;
   }
 }
@@ -113,10 +109,7 @@ export async function requireAuth(redirectTo = 'index.html') {
   return new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       unsub();
-      if (!user) {
-        window.location.href = redirectTo;
-        return;
-      }
+      if (!user) { window.location.href = redirectTo; return; }
       const profile = await getMyProfile();
       if (!profile || profile.deletedAt) {
         await signOut(auth);

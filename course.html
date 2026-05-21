@@ -277,6 +277,7 @@
   window.showSection = function(index) {
     currentSection = index;
     viewedSections.add(index);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const s = course.sections[index];
 

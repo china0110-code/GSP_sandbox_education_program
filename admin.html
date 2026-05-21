@@ -630,6 +630,8 @@
       allUsers = await getAllUsers();
       orgData  = await getOrgProgress(allUsers);
       renderUserTable(allUsers);
+      renderReport();
+      renderCertSelects();
     } catch (e) {
       const msg = e.code === 'auth/email-already-in-use'
         ? 'このメールアドレスは既に使用されています。'
