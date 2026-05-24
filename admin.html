@@ -387,24 +387,22 @@
       <div class="form-grid">
         <div class="fg">
           <label>ユーザを選択</label>
-          <select id="certUser"></select>
+          <select id="certUser" onchange="updateCertLink()"></select>
         </div>
         <div class="fg">
           <label>講座を選択</label>
-          <select id="certCourse"></select>
+          <select id="certCourse" onchange="updateCertLink()"></select>
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
-        <button class="btn btn-gold" onclick="previewCert()">プレビュー・印刷</button>
-      </div>
-
-      <div id="certPreviewArea" style="display:none">
-        <div class="cert-preview" id="certPreviewContent">
-          <!-- JS で描画 -->
+      <div id="certLinkArea" style="display:none;margin-bottom:24px">
+        <div style="background:var(--slate);border-radius:var(--r-sm);padding:14px;font-size:.83rem;color:var(--muted);margin-bottom:12px">
+          <span id="certLinkStatus"></span>
         </div>
-        <div style="display:flex;justify-content:center;gap:12px">
-          <button class="btn btn-primary" onclick="printCert()">🖨 印刷 / PDF保存</button>
+        <div style="display:flex;justify-content:flex-end">
+          <a id="certOpenBtn" href="#" target="_blank" class="btn btn-gold">
+            🏆 修了証を開く（新しいタブ）
+          </a>
         </div>
       </div>
     </div>
@@ -427,31 +425,75 @@
   </div>
 </div>
 
+<!-- ユーザ編集モーダル -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal" style="width:min(560px,92vw)">
+    <div class="modal-title">👤 ユーザ情報の編集</div>
+    <div id="editErr" class="err-msg"></div>
+    <div id="editOk" class="err-msg" style="background:#f0fbf5;border-color:#bbf7d0;color:var(--green)"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px">
+      <div class="fg">
+        <label>氏名 *</label>
+        <input type="text" id="editName">
+      </div>
+      <div class="fg">
+        <label>メールアドレス</label>
+        <input type="email" id="editEmail" disabled style="opacity:.6;cursor:not-allowed">
+      </div>
+      <div class="fg">
+        <label>ロール *</label>
+        <select id="editRole">
+          <option value="learner">学習者</option>
+          <option value="admin">管理者</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>部門</label>
+        <input type="text" id="editDept">
+      </div>
+      <div class="fg" style="grid-column:1/-1">
+        <label>対象者区分 *</label>
+        <select id="editTarget">
+          <option value="all">全社員</option>
+          <option value="exec">経営層</option>
+          <option value="mgmt">管理職</option>
+          <option value="legal">法務・コンプライアンス担当</option>
+          <option value="it">情報システム部門</option>
+          <option value="dx">DX推進部門</option>
+          <option value="data_user">業務部門のデータ利活用担当</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 受講状況サマリー -->
+    <div id="editProgressSummary" style="margin-top:4px;margin-bottom:16px;padding:12px 14px;background:var(--slate);border-radius:var(--r-sm);font-size:.82rem">
+      <div style="font-weight:700;margin-bottom:8px;color:var(--ink-soft)">📊 受講状況</div>
+      <div id="editProgressDetail" style="color:var(--muted)">読み込み中…</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">キャンセル</button>
+      <button class="btn btn-primary" id="editSaveBtn" onclick="saveEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  import { requireAdmin, logout, registerUser as authRegister, softDeleteUser } from "./auth.js";
-  import { getAllUsers, getOrgProgress, getQuizResults } from "./db.js";
+  import { requireAdmin, logout } from "./auth.js";
+  import { getAllUsers, getOrgProgress } from "./db.js";
+  import { renderReport, renderReportTable, exportCSV } from "./admin-report.js";
+  import {
+    renderUserTable, registerUser, clearRegForm,
+    confirmDelete, closeModal,
+    openEditModal, closeEditModal, saveEdit,
+  } from "./admin-users.js";
+  import { renderCertSelects } from "./admin-cert.js";
 
-  const TARGET_LABELS = {
-    all:'全社員', exec:'経営層', mgmt:'管理職',
-    legal:'法務・コンプライアンス担当', it:'情報システム部門',
-    dx:'DX推進部門', data_user:'業務部門のデータ利活用担当',
-  };
-
-  const AXIS_COLORS = {
-    data:'#1a5276', tech:'#1a4a3a', people:'#4a2070',
-    org:'#145232', gov:'#7e2020', culture:'#7e5109',
-  };
-
-  const AXIS_LABELS = {
-    data:'データ', tech:'テクノロジー', people:'人材',
-    org:'組織', gov:'ガバナンス', culture:'文化',
-  };
-
-  let profile   = null;
-  let allUsers  = [];
+  let profile    = null;
+  let allUsers   = [];
   let allCourses = [];
-  let orgData   = [];
-  let pendingDeleteUid = null;
+  let orgData    = [];
 
   /* ---- 初期化 ---- */
   async function init() {
@@ -460,129 +502,29 @@
 
     const [users, courses] = await Promise.all([
       getAllUsers(),
-      fetch('./data/courses.json').then(r => r.json()),
+      fetch('./data/courses-meta.json').then(r => r.json()),
     ]);
 
     allUsers   = users;
     allCourses = courses;
     orgData    = await getOrgProgress(users);
 
-    renderReport();
+    renderReport(allUsers, allCourses, orgData);
     renderUserTable(allUsers);
-    renderCertSelects();
+    renderCertSelects(allUsers, allCourses);
   }
 
-  /* ---- ① レポート ---- */
-  function renderReport() {
-    const total     = allUsers.length;
-    const totalCourses = allCourses.length;
-
-    /* サマリー集計 */
-    let completedSum = 0, passedSum = 0;
-    orgData.forEach(u => {
-      completedSum += Object.values(u.progress).filter(p => p.status === 'completed').length;
-      passedSum    += Object.values(u.quizzes).filter(q => q.passed).length;
-    });
-
-    const avgComp = total > 0 ? Math.round(completedSum / total) : 0;
-    const overallPct = total > 0 ? Math.round(completedSum / (total * totalCourses) * 100) : 0;
-
-    document.getElementById('reportSummary').innerHTML = `
-      <div class="admin-chip">
-        <div class="admin-chip-n">${total}</div>
-        <div class="admin-chip-l">登録ユーザ数</div>
-      </div>
-      <div class="admin-chip">
-        <div class="admin-chip-n">${overallPct}<span style="font-size:1rem;color:var(--muted)">%</span></div>
-        <div class="admin-chip-l">全体受講率</div>
-      </div>
-      <div class="admin-chip">
-        <div class="admin-chip-n">${avgComp}</div>
-        <div class="admin-chip-l">平均完了講座数</div>
-      </div>
-      <div class="admin-chip">
-        <div class="admin-chip-n">${passedSum}</div>
-        <div class="admin-chip-l">クイズ合格累計</div>
-      </div>
-    `;
-
-    /* 軸別受講率 */
-    const axisIds = ['data','tech','people','org','gov','culture'];
-    const axisHtml = axisIds.map(axisId => {
-      const axisCourses = allCourses.filter(c => c.axis === axisId);
-      if (axisCourses.length === 0) return '';
-      let compCount = 0;
-      orgData.forEach(u => {
-        axisCourses.forEach(c => {
-          if (u.progress[c.id]?.status === 'completed') compCount++;
-        });
-      });
-      const denominator = total * axisCourses.length;
-      const pct = denominator > 0 ? Math.round(compCount / denominator * 100) : 0;
-      return `
-      <div class="report-axis-card">
-        <span class="report-axis-label" style="background:${AXIS_COLORS[axisId]}">${AXIS_LABELS[axisId]}</span>
-        <div class="report-axis-pct">${pct}<span style="font-size:1rem;color:var(--muted)">%</span></div>
-        <div class="report-axis-sub">${axisCourses.length}講座 / ${compCount}件完了</div>
-        <div class="prog-bar" style="margin-top:10px">
-          <div class="prog-fill" style="width:${pct}%"></div>
-        </div>
-      </div>`;
-    }).join('');
-    document.getElementById('axisReport').innerHTML = axisHtml;
-
-    /* ユーザ別テーブル */
-    renderReportTable(orgData);
-  }
-
-  function renderReportTable(data) {
-    document.getElementById('reportTbody').innerHTML = data.map(u => {
-      const comp  = Object.values(u.progress).filter(p => p.status === 'completed').length;
-      const pct   = allCourses.length > 0 ? Math.round(comp / allCourses.length * 100) : 0;
-      const passed = Object.values(u.quizzes).filter(q => q.passed).length;
-      return `
-      <tr>
-        <td><strong>${u.name}</strong></td>
-        <td>${u.department || '—'}</td>
-        <td><span class="badge badge-muted">${TARGET_LABELS[u.targetGroup] || u.targetGroup}</span></td>
-        <td>${comp} / ${allCourses.length}</td>
-        <td>
-          <div class="mini-prog">
-            <div class="mini-prog-bar"><div class="mini-prog-fill" style="width:${pct}%"></div></div>
-            <span class="mini-prog-pct">${pct}%</span>
-          </div>
-        </td>
-        <td>${passed}</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted)">データなし</td></tr>`;
-  }
-
+  /* ---- レポートフィルタ ---- */
   window.filterReportTable = function(q) {
     const filtered = orgData.filter(u =>
       u.name?.includes(q) || u.department?.includes(q)
     );
-    renderReportTable(filtered);
+    renderReportTable(filtered, allCourses);
   };
 
-  /* ---- ② ユーザ管理テーブル ---- */
-  function renderUserTable(users) {
-    document.getElementById('userTbody').innerHTML = users.map(u => `
-      <tr>
-        <td><strong>${u.name}</strong></td>
-        <td style="font-size:.82rem;color:var(--muted)">${u.email}</td>
-        <td><span class="badge ${u.role === 'admin' ? 'badge-ink' : 'badge-muted'}">
-          ${u.role === 'admin' ? '管理者' : '学習者'}
-        </span></td>
-        <td>${u.department || '—'}</td>
-        <td><span class="badge badge-muted">${TARGET_LABELS[u.targetGroup] || u.targetGroup}</span></td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.uid}', '${u.name}')">
-            削除
-          </button>
-        </td>
-      </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted)">ユーザなし</td></tr>`;
-  }
+  window.exportCSV = function() { exportCSV(orgData, allCourses); };
 
+  /* ---- ユーザ管理 ---- */
   window.filterUserTable = function(q) {
     const filtered = allUsers.filter(u =>
       u.name?.includes(q) || u.email?.includes(q)
@@ -590,165 +532,79 @@
     renderUserTable(filtered);
   };
 
-  /* ---- ③ ユーザ登録 ---- */
   window.registerUser = async function() {
-    const name     = document.getElementById('regName').value.trim();
-    const email    = document.getElementById('regEmail').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const role     = document.getElementById('regRole').value;
-    const dept     = document.getElementById('regDept').value.trim();
-    const target   = document.getElementById('regTarget').value;
-
-    const errEl = document.getElementById('regErr');
-    const okEl  = document.getElementById('regOk');
-    errEl.classList.remove('show');
-    okEl.classList.remove('show');
-
-    if (!name || !email || !password || !target) {
-      errEl.textContent = '必須項目（*）をすべて入力してください。';
-      errEl.classList.add('show');
-      return;
-    }
-
-    if (password.length < 8) {
-      errEl.textContent = 'パスワードは8文字以上で入力してください。';
-      errEl.classList.add('show');
-      return;
-    }
-
-    const btn = document.getElementById('regBtn');
-    btn.disabled = true;
-    btn.textContent = '登録中…';
-
-    try {
-      await authRegister({ email, password, name, role, department: dept, targetGroup: target });
-      okEl.textContent = `${name} さんを登録しました。`;
-      okEl.classList.add('show');
-      clearRegForm();
-
-      /* ユーザ一覧を再取得 */
-      allUsers = await getAllUsers();
-      orgData  = await getOrgProgress(allUsers);
+    const result = await registerUser(allUsers, orgData, allCourses);
+    if (result.ok) {
+      allUsers   = await getAllUsers();
+      orgData    = await getOrgProgress(allUsers);
       renderUserTable(allUsers);
-      renderReport();
-      renderCertSelects();
-    } catch (e) {
-      const msg = e.code === 'auth/email-already-in-use'
-        ? 'このメールアドレスは既に使用されています。'
-        : `登録に失敗しました：${e.message}`;
-      errEl.textContent = msg;
-      errEl.classList.add('show');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '登録する';
+      renderReport(allUsers, allCourses, orgData);
+      renderCertSelects(allUsers, allCourses);
     }
   };
 
-  window.clearRegForm = function() {
-    ['regName','regEmail','regPassword','regDept'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('regRole').value   = 'learner';
-    document.getElementById('regTarget').value = 'all';
-  };
+  window.clearRegForm = function() { clearRegForm(); };
 
-  /* ---- 削除モーダル ---- */
   window.confirmDelete = function(uid, name) {
-    pendingDeleteUid = uid;
-    document.getElementById('deleteModal').classList.add('open');
-    document.getElementById('deleteConfirmBtn').textContent = `「${name}」を削除する`;
-    document.getElementById('deleteConfirmBtn').onclick = async () => {
-      await softDeleteUser(pendingDeleteUid);
-      closeModal();
-      allUsers = allUsers.filter(u => u.uid !== pendingDeleteUid);
-      orgData  = orgData.filter(u => u.uid !== pendingDeleteUid);
+    confirmDelete(uid, name, (deletedUid) => {
+      allUsers = allUsers.filter(u => u.uid !== deletedUid);
+      orgData  = orgData.filter(u => u.uid !== deletedUid);
       renderUserTable(allUsers);
-      renderReport();
-    };
+      renderReport(allUsers, allCourses, orgData);
+      renderCertSelects(allUsers, allCourses);
+    });
   };
 
-  window.closeModal = function() {
-    document.getElementById('deleteModal').classList.remove('open');
-    pendingDeleteUid = null;
+  window.closeModal = function() { closeModal(); };
+
+  /* ---- 編集モーダル ---- */
+  window.openEditModal = function(uid) {
+    openEditModal(uid, allUsers, orgData, allCourses);
   };
 
-  /* ---- ④ 修了証 ---- */
-  function renderCertSelects() {
-    const userSel = document.getElementById('certUser');
-    userSel.innerHTML = `<option value="">ユーザを選択…</option>` +
-      allUsers.map(u => `<option value="${u.uid}">${u.name}</option>`).join('');
+  window.closeEditModal = function() { closeEditModal(); };
 
-    const courseSel = document.getElementById('certCourse');
-    courseSel.innerHTML = `<option value="">講座を選択…</option>` +
-      allCourses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-  }
+  window.saveEdit = function() {
+    saveEdit(allUsers, orgData, (uid, updated) => {
+      const uIdx = allUsers.findIndex(u => u.uid === uid);
+      if (uIdx !== -1) allUsers[uIdx] = { ...allUsers[uIdx], ...updated };
+      const oIdx = orgData.findIndex(u => u.uid === uid);
+      if (oIdx !== -1) orgData[oIdx]  = { ...orgData[oIdx],  ...updated };
+      renderUserTable(allUsers);
+      renderCertSelects(allUsers, allCourses);
+    });
+  };
 
-  window.previewCert = function() {
+  /* ---- 修了証リンク更新 ---- */
+  window.updateCertLink = function() {
     const uid      = document.getElementById('certUser').value;
     const courseId = document.getElementById('certCourse').value;
+    const area     = document.getElementById('certLinkArea');
+    const statusEl = document.getElementById('certLinkStatus');
+    const btn      = document.getElementById('certOpenBtn');
 
-    if (!uid || !courseId) {
-      alert('ユーザと講座を選択してください。');
-      return;
-    }
+    if (!uid || !courseId) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
 
     const user   = allUsers.find(u => u.uid === uid);
     const course = allCourses.find(c => c.id === courseId);
     const uData  = orgData.find(u => u.uid === uid);
     const status = uData?.progress[courseId]?.status;
 
-    if (status !== 'completed') {
-      alert('この講座はまだ完了していません。');
-      return;
+    if (status === 'completed') {
+      statusEl.innerHTML = `✅ <strong>${user?.name}</strong> さんは <strong>${course?.title}</strong> を修了しています。修了証を発行できます。`;
+      btn.href = `cert.html?courseId=${courseId}`;
+      btn.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+    } else {
+      statusEl.innerHTML = `⚠️ <strong>${user?.name}</strong> さんはこの講座をまだ修了していません。`;
+      btn.href = '#';
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.45';
     }
-
-    const completedAt = uData?.progress[courseId]?.completedAt?.toDate?.()
-      || new Date();
-    const dateStr = completedAt.toLocaleDateString('ja-JP', {
-      year:'numeric', month:'long', day:'numeric'
-    });
-
-    document.getElementById('certPreviewContent').innerHTML = `
-      <div class="cert-title">修 了 証</div>
-      <div class="cert-sub">CERTIFICATE OF COMPLETION</div>
-      <div class="cert-name">${user.name} 様</div>
-      <div class="cert-body">
-        以下のAI活用教育プログラムを修了されたことを<br>ここに証します。
-      </div>
-      <div class="cert-course">${course.title}</div>
-      <div style="margin:16px 0;border-top:1px solid rgba(255,255,255,.15)"></div>
-      <div class="cert-date">修了日：${dateStr}</div>
-    `;
-
-    document.getElementById('certPreviewArea').style.display = 'block';
-    document.getElementById('certPreviewArea').scrollIntoView({ behavior:'smooth' });
   };
 
-  window.printCert = function() {
-    window.print();
-  };
-
-  /* ---- CSVエクスポート ---- */
-  window.exportCSV = function() {
-    const header = ['名前','部門','対象者区分','完了講座数','全体進捗(%)', 'クイズ合格数'];
-    const rows = orgData.map(u => {
-      const comp  = Object.values(u.progress).filter(p => p.status === 'completed').length;
-      const pct   = allCourses.length > 0 ? Math.round(comp / allCourses.length * 100) : 0;
-      const passed = Object.values(u.quizzes).filter(q => q.passed).length;
-      return [u.name, u.department || '', TARGET_LABELS[u.targetGroup] || '', comp, pct, passed];
-    });
-
-    const csv = [header, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `受講状況_${new Date().toLocaleDateString('ja-JP').replace(/\//g,'-')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  /* ---- タブ切り替え ---- */
+  /* ---- ログアウト ---- */
   document.querySelectorAll('.admin-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));

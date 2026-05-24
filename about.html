@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プログラム概要 — AI活用教育プログラム</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .about-hero {
+      background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+      border-radius: var(--r-lg);
+      padding: 40px 44px;
+      color: #fff;
+      margin-bottom: 28px;
+    }
+    .about-hero-title {
+      font-family: var(--ff-serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--gold-lt);
+      margin-bottom: 10px;
+    }
+    .about-hero-sub {
+      font-size: .87rem;
+      color: rgba(255,255,255,.65);
+      line-height: 1.8;
+    }
+    .level-chip {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .22rem .65rem;
+      border-radius: 4px;
+      letter-spacing: .02em;
+    }
+    .notice-box {
+      background: #fff5f5;
+      border: 1px solid #fecaca;
+      border-radius: var(--r-md);
+      padding: 16px 20px;
+      font-size: .83rem;
+      line-height: 1.7;
+      color: var(--ink);
+    }
+    .notice-box-title {
+      font-weight: 700;
+      color: #b91c1c;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="dashboard.html" class="topbar-logo">AI活用教育プログラム</a>
+  <div class="topbar-nav">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← ダッシュボードに戻る</a>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ヒーロー -->
+  <div class="about-hero au au1">
+    <div class="about-hero-title">AI活用教育プログラム</div>
+    <div class="about-hero-sub">
+      企業が6軸（Data・Technology・People・Organization・Governance・Culture）で<br>
+      AI-Readyな状態に到達することを支援する、体系的なeラーニングプログラムです。
+    </div>
+  </div>
+
+  <!-- プログラムの目的 -->
+  <div class="card au au2">
+    <div class="card-head">🎯 プログラムの目的</div>
+    <p style="font-size:.87rem;line-height:1.85;margin-bottom:16px">
+      本プログラムは、AI-Ready診断ツールによる組織診断と連動して設計されています。
+      診断結果で明らかになった課題軸に対応する講座を受講することで、
+      個人のAIリテラシー向上と組織全体のAI活用能力の底上げを同時に実現します。
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+      ${[
+        ['📚 Phase 1','AI活用の基盤づくり。全社員が最低限持つべきリテラシー・倫理・推進体制の基礎を習得。'],
+        ['🚀 Phase 2','実践と高度化。Phase 1の知識を組織に定着させ、スケールアップと深化を図る。'],
+        ['🔄 継続学習','AI技術の急速な変化に対応するため、定期的な再受講とアップデートを推奨。'],
+      ].map(([title, desc]) => `
+      <div style="background:var(--slate);border-radius:var(--r-sm);padding:16px">
+        <div style="font-weight:700;margin-bottom:6px;font-size:.9rem">${title}</div>
+        <div style="font-size:.8rem;color:var(--muted);line-height:1.6">${desc}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- ロール別到達レベル -->
+  <div class="card au au3">
+    <div class="card-head">📊 ロール別 到達レベルの目安</div>
+    <p style="font-size:.84rem;color:var(--muted);margin-bottom:20px;line-height:1.7">
+      各ロールでPhase 1を修了した場合の到達レベルの目安を、外部資格基準と照らし合わせて示します。
+    </p>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>対象ロール</th>
+          <th>Phase 1修了後の到達レベル</th>
+          <th>対応する外部基準</th>
+          <th>Phase 2修了後</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${[
+          ['全社員','AIの基礎概念・主要サービス・リスクを理解し業務でAIを適切に活用できる','生成AIパスポート<br>受験準備レベル','生成AIパスポート<br>合格レベル'],
+          ['管理職','AI変革リーダーとして組織を牽引し推進体制・ステークホルダー管理ができる','G検定<br>受験準備レベル','G検定<br>合格レベル'],
+          ['経営層','AI戦略を経営に組み込みビジョン発信・リスクガバナンスを担える','G検定<br>（任意推奨）','G検定<br>合格レベル'],
+          ['法務・コンプライアンス担当','AI利用に関わる法的リスクを判断しガイドライン策定・運用を担える','生成AIパスポート +<br>IPA AI事業者GL準拠','ガイドライン実務<br>運用レベル'],
+          ['情報システム・DX推進部門','AIツールの選定・セキュリティ設計・シャドーAI防止・展開支援ができる','G検定 +<br>DS検定（リテラシーLv）','MLOps実務<br>対応レベル'],
+          ['業務部門のデータ利活用担当','データ品質維持・カタログ整備・BIツール活用によりAI活用の基盤を担える','DS検定<br>リテラシーレベル','DS検定<br>合格レベル'],
+        ].map(([role, lv1, ext, lv2], i) => `
+        <tr>
+          <td style="font-weight:700">${role}</td>
+          <td style="font-size:.82rem">${lv1}</td>
+          <td style="font-size:.8rem;color:var(--ink-soft)">${ext}</td>
+          <td style="font-size:.8rem;color:var(--green);font-weight:700">${lv2}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:.76rem;color:var(--muted);margin-top:12px">
+      ※ 外部資格との対応はシラバスの範囲・内容に基づく目安です。受験の保証・合格の保証はありません。
+    </p>
+  </div>
+
+  <!-- 外部基準との対応 -->
+  <div class="card au au3">
+    <div class="card-head">🔗 準拠する外部基準</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      ${[
+        ['IPA DXリテラシー標準（DSS-L v2.0）','People・Culture軸に対応。全ビジネスパーソン向けの公的基準。2026年4月改訂版に準拠。'],
+        ['IPA AI事業者ガイドライン 第1.2版','Governance軸に対応。2026年3月公表の最新版に準拠したコンテンツ。'],
+        ['NIST AI RMF（AIリスク管理フレームワーク）','Technology・Governance軸に対応。国際標準への対応を補完的に参照。'],
+        ['生成AIパスポート シラバス 第4版','People軸・全社員向け講座の出題範囲をカバー。2026年2月試験対応版。'],
+        ['G検定 シラバス（2025年版）','管理職・推進担当向け講座の主要領域をカバー。第6・7章（生成AI・ガバナンス）に重点対応。'],
+        ['DS検定 リテラシーレベル','Data軸・データ利活用担当向け講座の出題範囲に対応。'],
+      ].map(([name, desc]) => `
+      <div style="background:var(--slate);border-radius:var(--r-sm);padding:14px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:6px">${name}</div>
+        <div style="font-size:.79rem;color:var(--muted);line-height:1.6">${desc}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- 制限・制約事項 -->
+  <div class="card au au3">
+    <div class="card-head">⚠️ 制限・制約事項（必ずお読みください）</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${[
+        ['外部資格の合格を保証するものではありません','本プログラムは各外部資格のシラバスを参考に設計していますが、受験準備・合格を保証するものではありません。外部資格の取得を目指す場合は、各資格の公式教材での学習を別途実施してください。'],
+        ['AI技術・法規制の変化への対応','AI技術・法規制は急速に変化します。本プログラムのコンテンツは定期的に更新されますが、常に最新の情報を反映しているとは限りません。重要な実務判断には最新情報の確認をお勧めします。'],
+        ['知識習得と実務スキルは異なります','本プログラムは知識の習得を目的としており、実際のAIツールの操作スキルや業務への適用能力は、実践を通じて習得する必要があります。受講のみで即座に実務で活用できるとは限りません。'],
+        ['クイズの合格は到達レベルの目安です','理解度チェッククイズの合格は、本プログラムの到達基準を満たしたことを示す目安です。外部試験の合否や実務能力の保証ではありません。'],
+        ['コンテンツの著作権について','本プログラムのコンテンツの著作権は制作者に帰属します。無断転載・配布・商用利用は禁止されています。'],
+      ].map(([title, desc]) => `
+      <div class="notice-box">
+        <div class="notice-box-title">⚠️ ${title}</div>
+        <div>${desc}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- 講座一覧 -->
+  <div class="card au au3">
+    <div class="card-head">📚 講座一覧</div>
+    <div style="margin-bottom:16px;font-size:.84rem;color:var(--muted)">Phase 1（7講座・約11時間）+ Phase 2（5講座・約8時間）= 合計12講座・約19時間</div>
+
+    <div style="font-weight:700;font-size:.82rem;color:var(--muted);letter-spacing:.06em;margin-bottom:10px">PHASE 1 — 基盤整備</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">
+      ${[
+        ['people-01','AIリテラシー基礎研修','全社員','120分','生成AIパスポート準拠'],
+        ['people-02','マインドセット変革ワークショップ','全社員・管理職','90分','—'],
+        ['gov-01','AI倫理・リスク管理研修','経営層・管理職・法務','90分','生成AIパスポート・G検定準拠'],
+        ['culture-01','マインドセット変革WS（経営・管理職向け）','経営層・管理職','90分','—'],
+        ['org-01','AI推進体制設計研修','経営層・管理職','90分','G検定準拠'],
+        ['tech-01','AIツール選定・運用研修','情報システム・DX推進','90分','G検定・IPA GL準拠'],
+        ['data-01','データ品質・活用基礎研修','DX推進・データ利活用担当','90分','DS検定準拠'],
+      ].map(([id, title, target, duration, std], i) => `
+      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:10px 14px;background:${i%2===0?'var(--white)':'var(--slate)'};border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <div style="font-weight:700">${title}</div>
+        <div style="color:var(--muted);white-space:nowrap">${target}</div>
+        <div style="color:var(--muted);white-space:nowrap">⏱ ${duration}</div>
+        <div style="color:var(--ink-soft);font-size:.74rem;white-space:nowrap">${std}</div>
+      </div>`).join('')}
+    </div>
+
+    <div style="font-weight:700;font-size:.82rem;color:var(--muted);letter-spacing:.06em;margin-bottom:10px">PHASE 2 — 実践・高度化</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${[
+        ['culture-02','事例共有・変革推進ワークショップ','全社員・経営層・管理職','90分','—'],
+        ['org-02','AI推進体制設計研修（強化版）','経営層・管理職','90分','G検定準拠'],
+        ['tech-02','AIツール活用高度化研修','情報システム・DX推進','120分','G検定・DS検定準拠'],
+        ['gov-02','AIガイドライン整備ワークショップ','管理職・法務','90分','IPA GL・NIST AI RMF準拠'],
+        ['data-02','データ分析・活用高度化研修','DX推進・データ利活用担当','90分','DS検定準拠'],
+      ].map(([id, title, target, duration, std], i) => `
+      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:10px 14px;background:${i%2===0?'var(--white)':'var(--slate)'};border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <div style="font-weight:700">${title}</div>
+        <div style="color:var(--muted);white-space:nowrap">${target}</div>
+        <div style="color:var(--muted);white-space:nowrap">⏱ ${duration}</div>
+        <div style="color:var(--ink-soft);font-size:.74rem;white-space:nowrap">${std}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { requireAuth, logout } from "./auth.js";
+  async function init() {
+    await requireAuth();
+  }
+  window.doLogout = async function() {
+    await logout();
+    location.href = 'index.html';
+  };
+  init();
+</script>
+
+</body>
+</html>

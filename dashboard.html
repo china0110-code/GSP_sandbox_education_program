@@ -188,6 +188,7 @@
 <div class="topbar">
   <a href="dashboard.html" class="topbar-logo">AI活用教育プログラム</a>
   <div class="topbar-nav">
+    <a href="about.html" class="btn btn-ghost btn-sm">📋 プログラム概要</a>
     <span class="topbar-user" id="topbarUser"></span>
     <span class="topbar-role" id="topbarRole"></span>
     <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
@@ -280,7 +281,7 @@
 
     /* データ取得 */
     const [coursesRes, prog, quiz] = await Promise.all([
-      fetch('./data/courses.json').then(r => r.json()),
+      fetch('./data/courses-meta.json').then(r => r.json()),
       getProgress(profile.uid),
       getQuizResults(profile.uid),
     ]);
