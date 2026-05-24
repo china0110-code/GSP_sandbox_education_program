@@ -1,7 +1,8 @@
 /* ============================================================
    auth.js — 認証・ユーザ管理共通処理
+   APIキーはfirebase.jsに一元化。auth.jsは設定を持たない。
    ============================================================ */
-import { auth, db } from "./firebase.js";
+import { auth, db, app as firebaseApp } from "./firebase.js";
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   signInWithEmailAndPassword,
@@ -34,7 +35,7 @@ export function watchAuth(callback) {
 }
 
 /* ----------------------------------------------------------
-   現在ユーザのプロフィールを Firestore から取得
+   現在ユーザのプロフィールをFirestoreから取得
    ---------------------------------------------------------- */
 export async function getMyProfile() {
   const user = auth.currentUser;
@@ -45,28 +46,21 @@ export async function getMyProfile() {
 
 /* ----------------------------------------------------------
    ユーザ登録（管理者が実行）
-   第2Firebaseインスタンスでユーザ作成→即サインアウト→インスタンス削除
-   → メインインスタンスの管理者セッションを維持
+   firebase.jsのappからconfigを再利用し第2インスタンスを作成。
+   APIキーの二重管理を解消。
    ---------------------------------------------------------- */
 export async function registerUser({ email, password, name, role, department, targetGroup }) {
-  const firebaseConfig = {
-    apiKey:            "AIzaSyA3DmRsJBHg_LagKEGzkAU7F0ItqyZsMj4",
-    authDomain:        "gsp-education.firebaseapp.com",
-    projectId:         "gsp-education",
-    storageBucket:     "gsp-education.firebasestorage.app",
-    messagingSenderId: "439766079947",
-    appId:             "1:439766079947:web:efe79f6cde4cc36e64be4e",
-  };
-
+  /* firebase.jsのappからconfigを取得して第2インスタンスを作成 */
+  const config = firebaseApp.options;
   const tempAppName = `temp-register-${Date.now()}`;
-  const tempApp  = initializeApp(firebaseConfig, tempAppName);
+  const tempApp  = initializeApp(config, tempAppName);
   const tempAuth = getAuth(tempApp);
 
   try {
     const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
     const uid  = cred.user.uid;
 
-    /* Firestoreへの書き込みはメインインスタンスの管理者権限で行う */
+    /* Firestoreへの書き込みはメインインスタンスの管理者権限で実行 */
     await setDoc(doc(db, 'users', uid), {
       name,
       email,
@@ -76,10 +70,8 @@ export async function registerUser({ email, password, name, role, department, ta
       createdAt: serverTimestamp(),
     });
 
-    /* 第2インスタンスをサインアウト→削除（deleteApp を使用） */
     await signOut(tempAuth);
     await deleteApp(tempApp);
-
     return uid;
 
   } catch (e) {
@@ -89,7 +81,7 @@ export async function registerUser({ email, password, name, role, department, ta
 }
 
 /* ----------------------------------------------------------
-   ユーザ論理削除（管理者が実行）
+   ユーザ論理削除
    ---------------------------------------------------------- */
 export async function softDeleteUser(uid) {
   await setDoc(doc(db, 'users', uid), { deletedAt: serverTimestamp() }, { merge: true });

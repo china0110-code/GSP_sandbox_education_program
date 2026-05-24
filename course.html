@@ -213,7 +213,16 @@
     const courseId = params.get('id');
     if (!courseId) { location.href = 'dashboard.html'; return; }
 
-    const courses = await fetch('./data/courses.json').then(r => r.json());
+    /* メタデータと本文を並行ロード（本文は分割ファイルから遅延ロード） */
+    const [coursesRes, contentRes] = await Promise.all([
+      fetch('./data/courses-meta.json').then(r => r.json()),
+      fetch('./data/courses-content.json').then(r => r.json()),
+    ]);
+    /* メタとコンテンツをマージして既存コードと互換性を保つ */
+    const courses = coursesRes.map(c => ({
+      ...c,
+      sections: (contentRes[c.id] || c.sections),
+    }));
     course = courses.find(c => c.id === courseId);
     if (!course) { location.href = 'dashboard.html'; return; }
 

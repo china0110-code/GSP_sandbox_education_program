@@ -1,5 +1,6 @@
 /* ============================================================
    firebase.js — Firebase初期化・共通エクスポート
+   APIキーの管理はこのファイルのみ。他ファイルは設定を持たない。
    ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -15,6 +16,6 @@ const firebaseConfig = {
   measurementId:     "G-TSQ5JNNLSZ",
 };
 
-const app  = initializeApp(firebaseConfig);
+export const app  = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
