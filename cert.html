@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>修了証 — AI活用教育プログラム</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── 画面表示用 ── */
+    .cert-page {
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 0 20px 60px;
+    }
+
+    .cert-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .cert-card {
+      background: linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+      border-radius: var(--r-lg);
+      padding: 56px 60px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 8px 40px rgba(11,22,40,.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 装飾ライン */
+    .cert-card::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(184,146,42,.35);
+      border-radius: calc(var(--r-lg) - 4px);
+      pointer-events: none;
+    }
+
+    .cert-emblem {
+      font-size: 2.4rem;
+      margin-bottom: 16px;
+      opacity: .85;
+    }
+
+    .cert-title {
+      font-family: var(--ff-serif);
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--gold-lt);
+      letter-spacing: .2em;
+      margin-bottom: 6px;
+    }
+
+    .cert-sub {
+      font-size: .72rem;
+      color: rgba(255,255,255,.4);
+      letter-spacing: .18em;
+      margin-bottom: 36px;
+    }
+
+    .cert-to {
+      font-size: .78rem;
+      color: rgba(255,255,255,.5);
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .cert-name {
+      font-family: var(--ff-serif);
+      font-size: 2rem;
+      font-weight: 300;
+      color: #fff;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255,255,255,.15);
+    }
+
+    .cert-body {
+      font-size: .87rem;
+      color: rgba(255,255,255,.65);
+      line-height: 2;
+      margin-bottom: 24px;
+    }
+
+    .cert-course-label {
+      font-size: .72rem;
+      color: rgba(255,255,255,.4);
+      letter-spacing: .1em;
+      margin-bottom: 8px;
+    }
+
+    .cert-course {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--gold-lt);
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255,255,255,.15);
+    }
+
+    .cert-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: .75rem;
+      color: rgba(255,255,255,.4);
+    }
+
+    .cert-org {
+      font-family: var(--ff-serif);
+      font-size: .9rem;
+      color: var(--gold-lt);
+    }
+
+    .cert-score {
+      display: inline-block;
+      background: rgba(184,146,42,.2);
+      border: 1px solid rgba(184,146,42,.4);
+      border-radius: 4px;
+      padding: .2rem .7rem;
+      font-size: .78rem;
+      color: var(--gold-lt);
+      margin-top: 8px;
+    }
+
+    /* ── 印刷専用スタイル ── */
+    @media print {
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+
+      .topbar,
+      .cert-actions,
+      .cert-notice {
+        display: none !important;
+      }
+
+      .cert-page {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .cert-card {
+        border-radius: 0;
+        box-shadow: none;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px 80px;
+      }
+    }
+
+    /* ── ローディング ── */
+    #loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      gap: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar" id="topbarEl">
+  <a href="dashboard.html" class="topbar-logo">AI活用教育プログラム</a>
+  <div class="topbar-nav">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm">← ダッシュボード</a>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<div class="cert-page">
+
+  <div class="cert-actions">
+    <button class="btn btn-primary" onclick="window.print()">🖨 印刷 / PDF保存</button>
+    <a href="dashboard.html" class="btn btn-ghost">ダッシュボードに戻る</a>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>修了証を読み込み中…
+  </div>
+
+  <div id="certContainer" style="display:none">
+    <div class="cert-card" id="certCard">
+      <div class="cert-emblem">🏆</div>
+      <div class="cert-title">修 了 証</div>
+      <div class="cert-sub">CERTIFICATE OF COMPLETION</div>
+
+      <div class="cert-to">この証書は</div>
+      <div class="cert-name" id="certName">—</div>
+
+      <div class="cert-body">
+        以下のAI活用教育プログラムを修了されたことを<br>ここに証します。
+      </div>
+
+      <div class="cert-course-label">修了講座</div>
+      <div class="cert-course" id="certCourse">—</div>
+
+      <div class="cert-footer">
+        <div>
+          <div class="cert-org">AI活用教育プログラム</div>
+          <div style="margin-top:4px" id="certDate">—</div>
+        </div>
+        <div style="text-align:right">
+          <div id="certScore" class="cert-score" style="display:none">—</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="cert-notice" style="text-align:center;font-size:.78rem;color:var(--muted);margin-top:16px">
+      「印刷 / PDF保存」ボタンを押すと、ブラウザの印刷ダイアログが開きます。<br>
+      「PDFとして保存」を選択することでPDFファイルとして保存できます。
+    </p>
+  </div>
+
+</div>
+
+<script type="module">
+  import { requireAuth, logout } from "./auth.js";
+  import { getProgress, getQuizResults } from "./db.js";
+
+  async function init() {
+    const profile = await requireAuth();
+
+    const params   = new URLSearchParams(location.search);
+    const courseId = params.get('courseId');
+
+    if (!courseId) {
+      document.getElementById('loading').textContent = 'URLが正しくありません。';
+      return;
+    }
+
+    const [courses, prog, quiz] = await Promise.all([
+      fetch('./data/courses-meta.json').then(r => r.json()),
+      getProgress(profile.uid),
+      getQuizResults(profile.uid),
+    ]);
+
+    const course = courses.find(c => c.id === courseId);
+    if (!course) {
+      document.getElementById('loading').textContent = '講座が見つかりません。';
+      return;
+    }
+
+    const progress  = prog[courseId];
+    const quizResult = quiz[courseId];
+
+    if (progress?.status !== 'completed') {
+      document.getElementById('loading').innerHTML =
+        'この講座はまだ修了していません。<br><a href="dashboard.html" class="btn btn-ghost" style="margin-top:16px">ダッシュボードに戻る</a>';
+      return;
+    }
+
+    /* 修了証の内容をセット */
+    document.getElementById('certName').textContent   = `${profile.name} 様`;
+    document.getElementById('certCourse').textContent = course.title;
+    document.title = `修了証：${course.title}`;
+
+    const completedAt = progress?.completedAt?.toDate?.() || new Date();
+    document.getElementById('certDate').textContent =
+      '修了日：' + completedAt.toLocaleDateString('ja-JP', {
+        year:'numeric', month:'long', day:'numeric'
+      });
+
+    if (quizResult) {
+      const scoreEl = document.getElementById('certScore');
+      scoreEl.textContent = `クイズスコア：${quizResult.score}/${quizResult.total}問正解`;
+      scoreEl.style.display = 'inline-block';
+    }
+
+    document.getElementById('loading').style.display      = 'none';
+    document.getElementById('certContainer').style.display = 'block';
+  }
+
+  window.doLogout = async function() {
+    await logout();
+    location.href = 'index.html';
+  };
+
+  init();
+</script>
+
+</body>
+</html>
