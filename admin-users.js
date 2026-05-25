@@ -130,11 +130,13 @@ export function openEditModal(uid, allUsers, orgData, allCourses) {
   document.getElementById('editOk').classList.remove('show');
 
   const uData = orgData.find(u => u.uid === uid);
+
+  /* ---- 基本情報タブ：受講サマリー ---- */
   if (uData) {
-    const comp    = Object.values(uData.progress || {}).filter(p => p.status === 'completed').length;
-    const inProg  = Object.values(uData.progress || {}).filter(p => p.status === 'in_progress').length;
-    const passed  = Object.values(uData.quizzes  || {}).filter(q => q.passed).length;
-    const total   = allCourses.length;
+    const comp   = Object.values(uData.progress || {}).filter(p => p.status === 'completed').length;
+    const inProg = Object.values(uData.progress || {}).filter(p => p.status === 'in_progress').length;
+    const passed = Object.values(uData.quizzes  || {}).filter(q => q.passed).length;
+    const total  = allCourses.length;
     document.getElementById('editProgressDetail').innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
         <div style="background:var(--white);border-radius:6px;padding:8px;border:1px solid var(--border)">
@@ -153,6 +155,65 @@ export function openEditModal(uid, allUsers, orgData, allCourses) {
   } else {
     document.getElementById('editProgressDetail').textContent = '受講履歴なし';
   }
+
+  /* ---- 受講状況タブ：講座別詳細 ---- */
+  const AXIS_COLORS = { data:'#1a5276', tech:'#1a4a3a', people:'#4a2070', org:'#145232', gov:'#7e2020', culture:'#7e5109' };
+  const AXIS_LABELS = { data:'データ', tech:'テクノロジー', people:'人材', org:'組織', gov:'ガバナンス', culture:'文化' };
+  const STATUS_LABEL = { completed:'✅ 完了', in_progress:'📖 受講中', not_started:'—' };
+
+  const detailEl = document.getElementById('editCourseDetail');
+  if (!uData) {
+    detailEl.innerHTML = '<p style="color:var(--muted)">受講履歴がありません。</p>';
+  } else {
+    const phases = [1, 2];
+    detailEl.innerHTML = phases.map(ph => {
+      const phaseCourses = allCourses.filter(c => c.phase === ph);
+      const rows = phaseCourses.map(c => {
+        const prog  = uData.progress[c.id];
+        const quiz  = uData.quizzes[c.id];
+        const status = prog?.status || 'not_started';
+        const completedAt = prog?.completedAt?.toDate?.()
+          ? prog.completedAt.toDate().toLocaleDateString('ja-JP')
+          : null;
+        const quizCell = quiz
+          ? `<span style="color:${quiz.passed ? 'var(--green)' : 'var(--red)'}">
+              ${quiz.passed ? '✅' : '❌'} ${quiz.score}/${quiz.total}問
+              ${quiz.attempts > 1 ? `<span style="font-size:.7rem;color:var(--muted)">(${quiz.attempts}回)</span>` : ''}
+            </span>`
+          : '<span style="color:var(--muted)">未受験</span>';
+        return `
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:9px 10px">
+            <span style="display:inline-block;font-size:.65rem;font-weight:700;padding:.15rem .4rem;border-radius:3px;color:#fff;background:${AXIS_COLORS[c.axis]};margin-right:4px">${AXIS_LABELS[c.axis]}</span>
+            <span style="font-size:.83rem;font-weight:700">${c.title}</span>
+          </td>
+          <td style="padding:9px 10px;font-size:.8rem;white-space:nowrap">
+            <span style="color:${status === 'completed' ? 'var(--green)' : status === 'in_progress' ? 'var(--gold)' : 'var(--muted)'}">${STATUS_LABEL[status]}</span>
+            ${completedAt ? `<br><span style="font-size:.7rem;color:var(--muted)">${completedAt}</span>` : ''}
+          </td>
+          <td style="padding:9px 10px;font-size:.8rem">${quizCell}</td>
+        </tr>`;
+      }).join('');
+
+      return `
+      <div style="margin-bottom:20px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px">PHASE ${ph} — ${ph === 1 ? '基盤整備' : '実践・高度化'}</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--slate)">
+              <th style="padding:7px 10px;text-align:left;font-size:.72rem;color:var(--muted);border-bottom:1px solid var(--border)">講座名</th>
+              <th style="padding:7px 10px;text-align:left;font-size:.72rem;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">受講状況</th>
+              <th style="padding:7px 10px;text-align:left;font-size:.72rem;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap">クイズ</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+  }
+
+  /* タブを基本情報に戻してから開く */
+  if (typeof window.switchEditTab === 'function') window.switchEditTab('info');
   document.getElementById('editModal').classList.add('open');
 }
 

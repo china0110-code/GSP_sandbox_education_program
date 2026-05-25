@@ -25,14 +25,6 @@
       color: rgba(255,255,255,.65);
       line-height: 1.8;
     }
-    .level-chip {
-      display: inline-block;
-      font-size: .72rem;
-      font-weight: 700;
-      padding: .22rem .65rem;
-      border-radius: 4px;
-      letter-spacing: .02em;
-    }
     .notice-box {
       background: #fff5f5;
       border: 1px solid #fecaca;
@@ -46,6 +38,53 @@
       font-weight: 700;
       color: #b91c1c;
       margin-bottom: 8px;
+    }
+    .phase-box {
+      background: var(--slate);
+      border-radius: var(--r-sm);
+      padding: 16px;
+    }
+    .phase-box-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      font-size: .9rem;
+    }
+    .phase-box-desc {
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .std-box {
+      background: var(--slate);
+      border-radius: var(--r-sm);
+      padding: 14px;
+    }
+    .std-box-name {
+      font-weight: 700;
+      font-size: .85rem;
+      margin-bottom: 6px;
+    }
+    .std-box-desc {
+      font-size: .79rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .course-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .82rem;
+    }
+    .course-row-title { font-weight: 700; }
+    .course-row-meta  { color: var(--muted); white-space: nowrap; }
+    .course-row-std   { color: var(--ink-soft); font-size: .74rem; white-space: nowrap; }
+    @media (max-width: 600px) {
+      .course-row { grid-template-columns: 1fr; }
+      .course-row-meta, .course-row-std { font-size: .75rem; }
     }
   </style>
 </head>
@@ -79,15 +118,18 @@
       個人のAIリテラシー向上と組織全体のAI活用能力の底上げを同時に実現します。
     </p>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
-      ${[
-        ['📚 Phase 1','AI活用の基盤づくり。全社員が最低限持つべきリテラシー・倫理・推進体制の基礎を習得。'],
-        ['🚀 Phase 2','実践と高度化。Phase 1の知識を組織に定着させ、スケールアップと深化を図る。'],
-        ['🔄 継続学習','AI技術の急速な変化に対応するため、定期的な再受講とアップデートを推奨。'],
-      ].map(([title, desc]) => `
-      <div style="background:var(--slate);border-radius:var(--r-sm);padding:16px">
-        <div style="font-weight:700;margin-bottom:6px;font-size:.9rem">${title}</div>
-        <div style="font-size:.8rem;color:var(--muted);line-height:1.6">${desc}</div>
-      </div>`).join('')}
+      <div class="phase-box">
+        <div class="phase-box-title">📚 Phase 1</div>
+        <div class="phase-box-desc">AI活用の基盤づくり。全社員が最低限持つべきリテラシー・倫理・推進体制の基礎を習得。</div>
+      </div>
+      <div class="phase-box">
+        <div class="phase-box-title">🚀 Phase 2</div>
+        <div class="phase-box-desc">実践と高度化。Phase 1の知識を組織に定着させ、スケールアップと深化を図る。</div>
+      </div>
+      <div class="phase-box">
+        <div class="phase-box-title">🔄 継続学習</div>
+        <div class="phase-box-desc">AI技術の急速な変化に対応するため、定期的な再受講とアップデートを推奨。</div>
+      </div>
     </div>
   </div>
 
@@ -98,32 +140,54 @@
       各ロールでPhase 1を修了した場合の到達レベルの目安を、外部資格基準と照らし合わせて示します。
     </p>
     <div style="overflow-x:auto">
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>対象ロール</th>
-          <th>Phase 1修了後の到達レベル</th>
-          <th>対応する外部基準</th>
-          <th>Phase 2修了後</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${[
-          ['全社員','AIの基礎概念・主要サービス・リスクを理解し業務でAIを適切に活用できる','生成AIパスポート<br>受験準備レベル','生成AIパスポート<br>合格レベル'],
-          ['管理職','AI変革リーダーとして組織を牽引し推進体制・ステークホルダー管理ができる','G検定<br>受験準備レベル','G検定<br>合格レベル'],
-          ['経営層','AI戦略を経営に組み込みビジョン発信・リスクガバナンスを担える','G検定<br>（任意推奨）','G検定<br>合格レベル'],
-          ['法務・コンプライアンス担当','AI利用に関わる法的リスクを判断しガイドライン策定・運用を担える','生成AIパスポート +<br>IPA AI事業者GL準拠','ガイドライン実務<br>運用レベル'],
-          ['情報システム・DX推進部門','AIツールの選定・セキュリティ設計・シャドーAI防止・展開支援ができる','G検定 +<br>DS検定（リテラシーLv）','MLOps実務<br>対応レベル'],
-          ['業務部門のデータ利活用担当','データ品質維持・カタログ整備・BIツール活用によりAI活用の基盤を担える','DS検定<br>リテラシーレベル','DS検定<br>合格レベル'],
-        ].map(([role, lv1, ext, lv2], i) => `
-        <tr>
-          <td style="font-weight:700">${role}</td>
-          <td style="font-size:.82rem">${lv1}</td>
-          <td style="font-size:.8rem;color:var(--ink-soft)">${ext}</td>
-          <td style="font-size:.8rem;color:var(--green);font-weight:700">${lv2}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>対象ロール</th>
+            <th>Phase 1修了後の到達レベル</th>
+            <th>対応する外部基準</th>
+            <th>Phase 2修了後</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:700">全社員</td>
+            <td style="font-size:.82rem">AIの基礎概念・主要サービス・リスクを理解し業務でAIを適切に活用できる</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">生成AIパスポート<br>受験準備レベル</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">生成AIパスポート<br>合格レベル</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">管理職</td>
+            <td style="font-size:.82rem">AI変革リーダーとして組織を牽引し推進体制・ステークホルダー管理ができる</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">G検定<br>受験準備レベル</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">G検定<br>合格レベル</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">経営層</td>
+            <td style="font-size:.82rem">AI戦略を経営に組み込みビジョン発信・リスクガバナンスを担える</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">G検定<br>（任意推奨）</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">G検定<br>合格レベル</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">法務・コンプライアンス担当</td>
+            <td style="font-size:.82rem">AI利用に関わる法的リスクを判断しガイドライン策定・運用を担える</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">生成AIパスポート +<br>IPA AI事業者GL準拠</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">ガイドライン実務<br>運用レベル</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">情報システム・DX推進部門</td>
+            <td style="font-size:.82rem">AIツールの選定・セキュリティ設計・シャドーAI防止・展開支援ができる</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">G検定 +<br>DS検定（リテラシーLv）</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">MLOps実務<br>対応レベル</td>
+          </tr>
+          <tr>
+            <td style="font-weight:700">業務部門のデータ利活用担当</td>
+            <td style="font-size:.82rem">データ品質維持・カタログ整備・BIツール活用によりAI活用の基盤を担える</td>
+            <td style="font-size:.8rem;color:var(--ink-soft)">DS検定<br>リテラシーレベル</td>
+            <td style="font-size:.8rem;color:var(--green);font-weight:700">DS検定<br>合格レベル</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <p style="font-size:.76rem;color:var(--muted);margin-top:12px">
       ※ 外部資格との対応はシラバスの範囲・内容に基づく目安です。受験の保証・合格の保証はありません。
@@ -134,18 +198,30 @@
   <div class="card au au3">
     <div class="card-head">🔗 準拠する外部基準</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      ${[
-        ['IPA DXリテラシー標準（DSS-L v2.0）','People・Culture軸に対応。全ビジネスパーソン向けの公的基準。2026年4月改訂版に準拠。'],
-        ['IPA AI事業者ガイドライン 第1.2版','Governance軸に対応。2026年3月公表の最新版に準拠したコンテンツ。'],
-        ['NIST AI RMF（AIリスク管理フレームワーク）','Technology・Governance軸に対応。国際標準への対応を補完的に参照。'],
-        ['生成AIパスポート シラバス 第4版','People軸・全社員向け講座の出題範囲をカバー。2026年2月試験対応版。'],
-        ['G検定 シラバス（2025年版）','管理職・推進担当向け講座の主要領域をカバー。第6・7章（生成AI・ガバナンス）に重点対応。'],
-        ['DS検定 リテラシーレベル','Data軸・データ利活用担当向け講座の出題範囲に対応。'],
-      ].map(([name, desc]) => `
-      <div style="background:var(--slate);border-radius:var(--r-sm);padding:14px">
-        <div style="font-weight:700;font-size:.85rem;margin-bottom:6px">${name}</div>
-        <div style="font-size:.79rem;color:var(--muted);line-height:1.6">${desc}</div>
-      </div>`).join('')}
+      <div class="std-box">
+        <div class="std-box-name">IPA DXリテラシー標準（DSS-L v2.0）</div>
+        <div class="std-box-desc">People・Culture軸に対応。全ビジネスパーソン向けの公的基準。2026年4月改訂版に準拠。</div>
+      </div>
+      <div class="std-box">
+        <div class="std-box-name">IPA AI事業者ガイドライン 第1.2版</div>
+        <div class="std-box-desc">Governance軸に対応。2026年3月公表の最新版に準拠したコンテンツ。</div>
+      </div>
+      <div class="std-box">
+        <div class="std-box-name">NIST AI RMF（AIリスク管理フレームワーク）</div>
+        <div class="std-box-desc">Technology・Governance軸に対応。国際標準への対応を補完的に参照。</div>
+      </div>
+      <div class="std-box">
+        <div class="std-box-name">生成AIパスポート シラバス 第4版</div>
+        <div class="std-box-desc">People軸・全社員向け講座の出題範囲をカバー。2026年2月試験対応版。</div>
+      </div>
+      <div class="std-box">
+        <div class="std-box-name">G検定 シラバス（2025年版）</div>
+        <div class="std-box-desc">管理職・推進担当向け講座の主要領域をカバー。第6・7章（生成AI・ガバナンス）に重点対応。</div>
+      </div>
+      <div class="std-box">
+        <div class="std-box-name">DS検定 リテラシーレベル</div>
+        <div class="std-box-desc">Data軸・データ利活用担当向け講座の出題範囲に対応。</div>
+      </div>
     </div>
   </div>
 
@@ -153,17 +229,26 @@
   <div class="card au au3">
     <div class="card-head">⚠️ 制限・制約事項（必ずお読みください）</div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      ${[
-        ['外部資格の合格を保証するものではありません','本プログラムは各外部資格のシラバスを参考に設計していますが、受験準備・合格を保証するものではありません。外部資格の取得を目指す場合は、各資格の公式教材での学習を別途実施してください。'],
-        ['AI技術・法規制の変化への対応','AI技術・法規制は急速に変化します。本プログラムのコンテンツは定期的に更新されますが、常に最新の情報を反映しているとは限りません。重要な実務判断には最新情報の確認をお勧めします。'],
-        ['知識習得と実務スキルは異なります','本プログラムは知識の習得を目的としており、実際のAIツールの操作スキルや業務への適用能力は、実践を通じて習得する必要があります。受講のみで即座に実務で活用できるとは限りません。'],
-        ['クイズの合格は到達レベルの目安です','理解度チェッククイズの合格は、本プログラムの到達基準を満たしたことを示す目安です。外部試験の合否や実務能力の保証ではありません。'],
-        ['コンテンツの著作権について','本プログラムのコンテンツの著作権は制作者に帰属します。無断転載・配布・商用利用は禁止されています。'],
-      ].map(([title, desc]) => `
       <div class="notice-box">
-        <div class="notice-box-title">⚠️ ${title}</div>
-        <div>${desc}</div>
-      </div>`).join('')}
+        <div class="notice-box-title">⚠️ 外部資格の合格を保証するものではありません</div>
+        <div>本プログラムは各外部資格のシラバスを参考に設計していますが、受験準備・合格を保証するものではありません。外部資格の取得を目指す場合は、各資格の公式教材での学習を別途実施してください。</div>
+      </div>
+      <div class="notice-box">
+        <div class="notice-box-title">⚠️ AI技術・法規制の変化への対応</div>
+        <div>AI技術・法規制は急速に変化します。本プログラムのコンテンツは定期的に更新されますが、常に最新の情報を反映しているとは限りません。重要な実務判断には最新情報の確認をお勧めします。</div>
+      </div>
+      <div class="notice-box">
+        <div class="notice-box-title">⚠️ 知識習得と実務スキルは異なります</div>
+        <div>本プログラムは知識の習得を目的としており、実際のAIツールの操作スキルや業務への適用能力は、実践を通じて習得する必要があります。受講のみで即座に実務で活用できるとは限りません。</div>
+      </div>
+      <div class="notice-box">
+        <div class="notice-box-title">⚠️ クイズの合格は到達レベルの目安です</div>
+        <div>理解度チェッククイズの合格は、本プログラムの到達基準を満たしたことを示す目安です。外部試験の合否や実務能力の保証ではありません。</div>
+      </div>
+      <div class="notice-box">
+        <div class="notice-box-title">⚠️ コンテンツの著作権について</div>
+        <div>本プログラムのコンテンツの著作権は制作者に帰属します。無断転載・配布・商用利用は禁止されています。</div>
+      </div>
     </div>
   </div>
 
@@ -174,38 +259,82 @@
 
     <div style="font-weight:700;font-size:.82rem;color:var(--muted);letter-spacing:.06em;margin-bottom:10px">PHASE 1 — 基盤整備</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">
-      ${[
-        ['people-01','AIリテラシー基礎研修','全社員','120分','生成AIパスポート準拠'],
-        ['people-02','マインドセット変革ワークショップ','全社員・管理職','90分','—'],
-        ['gov-01','AI倫理・リスク管理研修','経営層・管理職・法務','90分','生成AIパスポート・G検定準拠'],
-        ['culture-01','マインドセット変革WS（経営・管理職向け）','経営層・管理職','90分','—'],
-        ['org-01','AI推進体制設計研修','経営層・管理職','90分','G検定準拠'],
-        ['tech-01','AIツール選定・運用研修','情報システム・DX推進','90分','G検定・IPA GL準拠'],
-        ['data-01','データ品質・活用基礎研修','DX推進・データ利活用担当','90分','DS検定準拠'],
-      ].map(([id, title, target, duration, std], i) => `
-      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:10px 14px;background:${i%2===0?'var(--white)':'var(--slate)'};border:1px solid var(--border);border-radius:6px;font-size:.82rem">
-        <div style="font-weight:700">${title}</div>
-        <div style="color:var(--muted);white-space:nowrap">${target}</div>
-        <div style="color:var(--muted);white-space:nowrap">⏱ ${duration}</div>
-        <div style="color:var(--ink-soft);font-size:.74rem;white-space:nowrap">${std}</div>
-      </div>`).join('')}
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">AIリテラシー基礎研修</div>
+        <div class="course-row-meta">全社員</div>
+        <div class="course-row-meta">⏱ 120分</div>
+        <div class="course-row-std">生成AIパスポート準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--slate)">
+        <div class="course-row-title">マインドセット変革ワークショップ</div>
+        <div class="course-row-meta">全社員・管理職</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">—</div>
+      </div>
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">AI倫理・リスク管理研修</div>
+        <div class="course-row-meta">経営層・管理職・法務</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">生成AIパスポート・G検定準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--slate)">
+        <div class="course-row-title">マインドセット変革WS（経営・管理職向け）</div>
+        <div class="course-row-meta">経営層・管理職</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">—</div>
+      </div>
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">AI推進体制設計研修</div>
+        <div class="course-row-meta">経営層・管理職</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">G検定準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--slate)">
+        <div class="course-row-title">AIツール選定・運用研修</div>
+        <div class="course-row-meta">情報システム・DX推進</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">G検定・IPA GL準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">データ品質・活用基礎研修</div>
+        <div class="course-row-meta">DX推進・データ利活用担当</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">DS検定準拠</div>
+      </div>
     </div>
 
     <div style="font-weight:700;font-size:.82rem;color:var(--muted);letter-spacing:.06em;margin-bottom:10px">PHASE 2 — 実践・高度化</div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      ${[
-        ['culture-02','事例共有・変革推進ワークショップ','全社員・経営層・管理職','90分','—'],
-        ['org-02','AI推進体制設計研修（強化版）','経営層・管理職','90分','G検定準拠'],
-        ['tech-02','AIツール活用高度化研修','情報システム・DX推進','120分','G検定・DS検定準拠'],
-        ['gov-02','AIガイドライン整備ワークショップ','管理職・法務','90分','IPA GL・NIST AI RMF準拠'],
-        ['data-02','データ分析・活用高度化研修','DX推進・データ利活用担当','90分','DS検定準拠'],
-      ].map(([id, title, target, duration, std], i) => `
-      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:10px 14px;background:${i%2===0?'var(--white)':'var(--slate)'};border:1px solid var(--border);border-radius:6px;font-size:.82rem">
-        <div style="font-weight:700">${title}</div>
-        <div style="color:var(--muted);white-space:nowrap">${target}</div>
-        <div style="color:var(--muted);white-space:nowrap">⏱ ${duration}</div>
-        <div style="color:var(--ink-soft);font-size:.74rem;white-space:nowrap">${std}</div>
-      </div>`).join('')}
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">事例共有・変革推進ワークショップ</div>
+        <div class="course-row-meta">全社員・経営層・管理職</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">—</div>
+      </div>
+      <div class="course-row" style="background:var(--slate)">
+        <div class="course-row-title">AI推進体制設計研修（強化版）</div>
+        <div class="course-row-meta">経営層・管理職</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">G検定準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">AIツール活用高度化研修</div>
+        <div class="course-row-meta">情報システム・DX推進</div>
+        <div class="course-row-meta">⏱ 120分</div>
+        <div class="course-row-std">G検定・DS検定準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--slate)">
+        <div class="course-row-title">AIガイドライン整備ワークショップ</div>
+        <div class="course-row-meta">管理職・法務</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">IPA GL・NIST AI RMF準拠</div>
+      </div>
+      <div class="course-row" style="background:var(--white)">
+        <div class="course-row-title">データ分析・活用高度化研修</div>
+        <div class="course-row-meta">DX推進・データ利活用担当</div>
+        <div class="course-row-meta">⏱ 90分</div>
+        <div class="course-row-std">DS検定準拠</div>
+      </div>
     </div>
   </div>
 
