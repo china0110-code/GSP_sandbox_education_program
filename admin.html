@@ -337,6 +337,7 @@
   <div class="admin-tabs">
     <button class="admin-tab active" data-tab="report">📊 受講状況レポート</button>
     <button class="admin-tab" data-tab="roi">💹 ROIダッシュボード</button>
+    <button class="admin-tab" data-tab="diagnosis">🔗 診断連携</button>
     <button class="admin-tab" data-tab="users">👥 ユーザ管理</button>
     <button class="admin-tab" data-tab="register">➕ ユーザ登録</button>
     <button class="admin-tab" data-tab="cert">🏆 修了証発行</button>
@@ -454,7 +455,55 @@
 
   </div>
 
-  <!-- ③ ユーザ管理 -->
+  <!-- ③ 診断連携 -->
+  <div class="admin-panel" data-tab="diagnosis">
+
+    <!-- 現在の設定状況 -->
+    <div class="card au au1">
+      <div class="card-head">🔗 診断連携の状況</div>
+      <div id="diagnosisStatus">
+        <div class="loading"><div class="spinner"></div>読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- JSONアップロード -->
+    <div class="card au au2">
+      <div class="card-head">📤 education-plan.json をアップロード</div>
+      <p style="font-size:.84rem;color:var(--muted);line-height:1.8;margin-bottom:20px">
+        AI-Ready診断ツールの「教育プログラム推奨」セクションからダウンロードした
+        <code style="background:var(--slate);padding:2px 6px;border-radius:4px;font-size:.82rem">education-plan.json</code>
+        をここにアップロードしてください。<br>
+        アップロード後、各ユーザーのダッシュボードに診断スコアに基づく優先講座が表示されます。
+      </p>
+
+      <div id="diagDropZone" style="border:2px dashed var(--border);border-radius:var(--r-md);padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:var(--slate)"
+        onclick="document.getElementById('diagFileInput').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--ink-soft)';this.style.background='#eef2ff'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--slate)'"
+        ondrop="handleDiagDrop(event)">
+        <div style="font-size:2rem;margin-bottom:10px">📂</div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:6px">クリックまたはドラッグ＆ドロップ</div>
+        <div style="font-size:.78rem;color:var(--muted)">education-plan.json のみ対応</div>
+        <input type="file" id="diagFileInput" accept=".json" style="display:none" onchange="handleDiagFile(this.files[0])">
+      </div>
+
+      <div id="diagPreview" style="display:none;margin-top:20px"></div>
+      <div id="diagUploadErr" class="err-msg" style="margin-top:12px"></div>
+      <div id="diagUploadOk"  class="err-msg" style="background:#f0fbf5;border-color:#bbf7d0;color:var(--green);margin-top:12px"></div>
+    </div>
+
+    <!-- 診断スコア詳細（取込済みの場合） -->
+    <div class="card au au3" id="diagDetailCard" style="display:none">
+      <div class="card-head">📊 取込済み診断データの詳細</div>
+      <div id="diagDetail"></div>
+      <div style="margin-top:20px;display:flex;justify-content:flex-end">
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteDiag()">🗑 診断データを削除する</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ④ ユーザ管理 -->
   <div class="admin-panel" data-tab="users">
     <div class="card au">
       <div class="card-head">登録ユーザ一覧</div>
@@ -655,7 +704,7 @@
 
 <script type="module">
   import { requireAdmin, logout } from "./auth.js";
-  import { getAllUsers, getOrgProgress } from "./db.js";
+  import { getAllUsers, getOrgProgress, saveOrgPlan, getOrgPlan, deleteOrgPlan } from "./db.js";
   import { renderReport, renderReportTable, exportCSV } from "./admin-report.js";
   import {
     renderUserTable, registerUser, clearRegForm,
@@ -688,6 +737,10 @@
     renderROI(allUsers, allCourses, orgData);
     renderUserTable(allUsers);
     renderCertSelects(allUsers, allCourses);
+
+    /* 診断連携ステータス */
+    const orgPlan = await getOrgPlan();
+    renderDiagnosisStatus(orgPlan);
   }
 
   /* ---- レポートフィルタ ---- */
@@ -778,6 +831,214 @@
       btn.style.pointerEvents = 'none';
       btn.style.opacity = '0.45';
     }
+  };
+
+  /* ---- 診断連携ステータス描画 ---- */
+  function renderDiagnosisStatus(plan) {
+    const el = document.getElementById('diagnosisStatus');
+    const detailCard = document.getElementById('diagDetailCard');
+    if (!plan) {
+      el.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--slate);border-radius:var(--r-md)">
+          <span style="font-size:1.5rem">⚠️</span>
+          <div>
+            <div style="font-weight:700;color:var(--muted)">診断データ未連携</div>
+            <div style="font-size:.82rem;color:var(--muted);margin-top:2px">AI-Ready診断ツールからexportしたJSONをアップロードしてください。</div>
+          </div>
+        </div>`;
+      detailCard.style.display = 'none';
+      return;
+    }
+
+    const importedAt = plan.importedAt?.toDate?.()?.toLocaleString('ja-JP') || '—';
+    const AXIS_COLORS = { data:'#1a5276', tech:'#1a4a3a', people:'#4a2070', org:'#145232', gov:'#7e2020', culture:'#7e5109' };
+    const AXIS_LABELS = { data:'データ', tech:'テクノロジー', people:'人材', org:'組織', gov:'ガバナンス', culture:'文化' };
+    const scores = plan.diagnosisScores || {};
+
+    el.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--green)"></span>
+            <span style="font-weight:700;color:var(--green)">診断データ連携済み</span>
+          </div>
+          <div style="font-size:.82rem;color:var(--muted);line-height:1.8">
+            <div>企業名：<strong style="color:var(--ink)">${plan.company || '—'}</strong></div>
+            <div>総合スコア：<strong style="color:var(--ink)">${plan.totalScore || '—'} / 360点</strong>　${plan.level || ''}</div>
+            <div>取込日時：${importedAt}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          ${Object.entries(scores).map(([id, sc]) => `
+            <div style="text-align:center;min-width:60px">
+              <div style="font-size:1.1rem;font-weight:700;color:${AXIS_COLORS[id]}">${sc}</div>
+              <div style="font-size:.65rem;color:var(--muted)">${AXIS_LABELS[id]}</div>
+              <div style="height:3px;background:var(--border);border-radius:99px;margin-top:3px">
+                <div style="width:${Math.round(sc/60*100)}%;height:100%;background:${AXIS_COLORS[id]};border-radius:99px"></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+
+    /* 詳細カードも描画 */
+    renderDiagnosisDetail(plan);
+    detailCard.style.display = '';
+  }
+
+  function renderDiagnosisDetail(plan) {
+    const AXIS_COLORS = { data:'#1a5276', tech:'#1a4a3a', people:'#4a2070', org:'#145232', gov:'#7e2020', culture:'#7e5109' };
+    const TARGET_LABELS = { all:'全社員', exec:'経営層', mgmt:'管理職', legal:'法務・コンプライアンス担当', it:'情報システム部門', dx:'DX推進部門', data_user:'業務部門のデータ利活用担当' };
+    const edu = plan.educationPlan || {};
+
+    const phaseHTML = [1, 2].map(ph => {
+      const programs = edu[`phase${ph}`] || [];
+      if (!programs.length) return '';
+      return `
+        <div style="margin-bottom:16px">
+          <div style="font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:8px">
+            ${ph === 1 ? '🔴 Phase 1 — 優先対応' : '🟡 Phase 2 — 強化推奨'}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${programs.map(p => `
+              <div style="padding:10px 14px;background:var(--slate);border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                  <span style="display:inline-block;font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:3px;color:#fff;background:${AXIS_COLORS[p.axisId]}">${p.axisName} ${p.axisScore}点</span>
+                  <strong>${p.label}</strong>
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap">
+                  ${(p.targets||[]).map(t => `<span class="badge badge-muted" style="font-size:.68rem">${TARGET_LABELS[t]||t}</span>`).join('')}
+                </div>
+                ${p.note ? `<div style="font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.6">${p.note}</div>` : ''}
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    /* KPIリスク上位 */
+    const kpiHTML = (plan.kpiRiskSummary || []).map(k => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.8rem">
+        <span style="font-weight:700;flex:1">${k.kpiLabel}</span>
+        <span style="color:var(--muted)">最大ボトルネック軸：${k.topRiskAxis || '—'}</span>
+        <span class="badge ${k.overallRiskScore >= 7 ? 'badge-red' : k.overallRiskScore >= 4 ? 'badge-gold' : 'badge-green'}" style="font-size:.68rem">
+          リスク ${k.overallRiskScore}
+        </span>
+      </div>`).join('') || '<div style="color:var(--muted);font-size:.82rem;padding:8px">—</div>';
+
+    document.getElementById('diagDetail').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div style="font-weight:700;font-size:.85rem;margin-bottom:12px;color:var(--ink-soft)">📚 教育計画（フェーズ別）</div>
+          ${phaseHTML || '<p style="color:var(--muted);font-size:.83rem">データなし</p>'}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:.85rem;margin-bottom:12px;color:var(--ink-soft)">⚠ KPIリスクサマリー</div>
+          <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden">${kpiHTML}</div>
+          <div style="margin-top:16px">
+            <div style="font-weight:700;font-size:.85rem;margin-bottom:8px;color:var(--ink-soft)">🎯 優先改善軸</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${(plan.priorityAxes||[]).map((id,i) => {
+                const AXIS_COLORS = { data:'#1a5276', tech:'#1a4a3a', people:'#4a2070', org:'#145232', gov:'#7e2020', culture:'#7e5109' };
+                const AXIS_LABELS = { data:'データ', tech:'テクノロジー', people:'人材', org:'組織', gov:'ガバナンス', culture:'文化' };
+                return `<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:${AXIS_COLORS[id]};color:#fff;border-radius:6px;font-size:.78rem;font-weight:700">
+                  <span style="opacity:.7">優先${i+1}</span> ${AXIS_LABELS[id]||id}
+                </span>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ---- JSONファイル処理 ---- */
+  window.handleDiagDrop = function(e) {
+    e.preventDefault();
+    document.getElementById('diagDropZone').style.borderColor = 'var(--border)';
+    document.getElementById('diagDropZone').style.background  = 'var(--slate)';
+    const file = e.dataTransfer.files[0];
+    if (file) handleDiagFile(file);
+  };
+
+  window.handleDiagFile = async function(file) {
+    const errEl = document.getElementById('diagUploadErr');
+    const okEl  = document.getElementById('diagUploadOk');
+    const preEl = document.getElementById('diagPreview');
+    errEl.classList.remove('show');
+    okEl.classList.remove('show');
+    preEl.style.display = 'none';
+
+    if (!file || !file.name.endsWith('.json')) {
+      errEl.textContent = '.json ファイルを選択してください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      /* バリデーション */
+      if (!data.version || !data.diagnosisScores || !data.educationPlan) {
+        errEl.textContent = 'ファイル形式が正しくありません。AI-Ready診断ツールからエクスポートしたファイルをご使用ください。';
+        errEl.classList.add('show');
+        return;
+      }
+
+      /* プレビュー表示 */
+      const scores = data.diagnosisScores;
+      const AXIS_LABELS = { data:'データ', tech:'テクノロジー', people:'人材', org:'組織', gov:'ガバナンス', culture:'文化' };
+      preEl.style.display = '';
+      preEl.innerHTML = `
+        <div style="padding:16px;background:var(--gold-pale);border:1px solid rgba(184,146,42,.3);border-radius:var(--r-md);font-size:.83rem">
+          <div style="font-weight:700;margin-bottom:10px;color:var(--ink)">📋 インポート内容の確認</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+            <div>企業名：<strong>${data.company || '—'}</strong></div>
+            <div>総合スコア：<strong>${data.totalScore} / 360点（${data.level}）</strong></div>
+            <div>エクスポート日時：${new Date(data.exportedAt).toLocaleString('ja-JP')}</div>
+            <div>Phase1教育計画：<strong>${(data.educationPlan.phase1||[]).length}件</strong></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            ${Object.entries(scores).map(([id, sc]) =>
+              `<span style="font-size:.78rem;padding:3px 8px;background:var(--white);border:1px solid var(--border);border-radius:4px">${AXIS_LABELS[id]}：${sc}点</span>`
+            ).join('')}
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="importDiagData()">⬆ このデータをインポートする</button>
+        </div>`;
+
+      /* グローバルに保持 */
+      window._pendingDiagData = data;
+
+    } catch (e) {
+      errEl.textContent = 'JSONの解析に失敗しました：' + e.message;
+      errEl.classList.add('show');
+    }
+  };
+
+  window.importDiagData = async function() {
+    const data  = window._pendingDiagData;
+    const errEl = document.getElementById('diagUploadErr');
+    const okEl  = document.getElementById('diagUploadOk');
+    if (!data) return;
+
+    try {
+      await saveOrgPlan(data);
+      okEl.textContent = '診断データをインポートしました。各ユーザーのダッシュボードに優先講座が反映されます。';
+      okEl.classList.add('show');
+      document.getElementById('diagPreview').style.display = 'none';
+      window._pendingDiagData = null;
+      const orgPlan = await getOrgPlan();
+      renderDiagnosisStatus(orgPlan);
+    } catch (e) {
+      errEl.textContent = 'インポートに失敗しました：' + e.message;
+      errEl.classList.add('show');
+    }
+  };
+
+  window.confirmDeleteDiag = async function() {
+    if (!confirm('診断データを削除しますか？各ユーザーのダッシュボードから優先講座表示が消えます。')) return;
+    await deleteOrgPlan();
+    const el = document.getElementById('diagnosisStatus');
+    renderDiagnosisStatus(null);
+    showToast && showToast('診断データを削除しました', 'info');
   };
 
   /* ---- 編集モーダル タブ切替 ---- */
