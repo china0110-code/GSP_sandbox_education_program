@@ -204,6 +204,9 @@
     <div class="page-sub">あなたに推奨された講座を受講して、AI活用スキルを高めましょう。</div>
   </div>
 
+  <!-- 診断連携バナー -->
+  <div id="diagnosisBanner" style="display:none"></div>
+
   <!-- サマリー -->
   <div class="summary-grid au au2" id="summaryGrid">
     <div class="loading"><div class="spinner"></div>読み込み中…</div>
@@ -215,6 +218,7 @@
 
     <div class="filter-tabs" id="filterTabs">
       <button class="filter-tab active" data-filter="all">すべて</button>
+      <button class="filter-tab" data-filter="diag_priority">🔴 診断優先</button>
       <button class="filter-tab" data-filter="required">🔴 必須</button>
       <button class="filter-tab" data-filter="recommended">⭐ 推奨</button>
       <button class="filter-tab" data-filter="in_progress">受講中</button>
@@ -231,7 +235,7 @@
 
 <script type="module">
   import { requireAuth, logout } from "./auth.js";
-  import { getProgress, getQuizResults } from "./db.js";
+  import { getProgress, getQuizResults, getOrgPlan } from "./db.js";
 
   /* 対象者区分ラベル（診断ツールと整合） */
   const TARGET_LABELS = {
@@ -267,6 +271,7 @@
   let quizResults = {};
   let profile    = null;
   let currentFilter = 'all';
+  let _orgPlan   = null;  // 診断プランをモジュールスコープで保持
 
   /* ---- 初期化 ---- */
   async function init() {
@@ -280,10 +285,11 @@
       `ようこそ、${profile.name}さん`;
 
     /* データ取得 */
-    const [coursesRes, prog, quiz] = await Promise.all([
+    const [coursesRes, prog, quiz, orgPlan] = await Promise.all([
       fetch('./data/courses-meta.json').then(r => r.json()),
       getProgress(profile.uid),
       getQuizResults(profile.uid),
+      getOrgPlan(),
     ]);
 
     allCourses  = coursesRes;
@@ -291,8 +297,63 @@
     quizResults = quiz;
 
     renderSummary();
+    renderDiagnosisBanner(orgPlan, profile);
     renderCourses('all');
     initFilters();
+  }
+
+  /* ---- 診断連携バナー ---- */
+  function renderDiagnosisBanner(orgPlan, prof) {
+    _orgPlan = orgPlan;
+    const container = document.getElementById('diagnosisBanner');
+    if (!container) return;
+    if (!orgPlan || !orgPlan.diagnosisScores) {
+      container.style.display = 'none';
+      return;
+    }
+
+    const scores = orgPlan.diagnosisScores;
+    const AXIS_COLORS = { data:'#1a5276', tech:'#1a4a3a', people:'#4a2070', org:'#145232', gov:'#7e2020', culture:'#7e5109' };
+    const AXIS_LABELS = { data:'データ', tech:'テクノロジー', people:'人材', org:'組織', gov:'ガバナンス', culture:'文化' };
+
+    /* ユーザーのtargetGroupに関連する軸スコアを取得 */
+    const TARGET_AXIS_MAP = {
+      all:       ['people','culture'],
+      exec:      ['org','gov','culture'],
+      mgmt:      ['org','people','culture'],
+      legal:     ['gov'],
+      it:        ['tech','data'],
+      dx:        ['tech','data'],
+      data_user: ['data'],
+    };
+    const relevantAxes = TARGET_AXIS_MAP[prof.targetGroup] || ['people'];
+    const weakAxes = relevantAxes
+      .map(id => ({ id, name: AXIS_LABELS[id], score: scores[id] || 0, color: AXIS_COLORS[id] }))
+      .sort((a, b) => a.score - b.score);
+
+    container.style.display = '';
+    container.innerHTML = `
+      <div style="background:linear-gradient(135deg,var(--ink) 0%,var(--ink-soft) 100%);border-radius:var(--r-md);padding:18px 22px;margin-bottom:24px;display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--gold-lt);margin-bottom:4px">AI-READY 診断連携済み</div>
+          <div style="font-size:.88rem;color:rgba(255,255,255,.75);line-height:1.7">
+            組織診断スコア（${orgPlan.company || ''}）をもとに、あなたのロールに関連する優先講座をハイライトしています。
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            ${weakAxes.map(a => `
+              <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:5px 10px">
+                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${a.color}"></span>
+                <span style="font-size:.75rem;color:rgba(255,255,255,.8)">${a.name}</span>
+                <span style="font-size:.82rem;font-weight:700;color:${a.score <= 39 ? '#fca5a5' : a.score <= 69 ? '#fde68a' : '#86efac'}">${a.score}<span style="font-size:.65rem;opacity:.6">/60</span></span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div style="flex-shrink:0;text-align:right">
+          <div style="font-size:.7rem;color:rgba(255,255,255,.4);margin-bottom:4px">組織総合スコア</div>
+          <div style="font-size:2rem;font-weight:300;color:#fff;line-height:1">${orgPlan.totalScore}<span style="font-size:.9rem;opacity:.4"> / 360</span></div>
+          <div style="font-size:.72rem;color:var(--gold-lt);margin-top:2px">${orgPlan.level || ''}</div>
+        </div>
+      </div>`;
   }
 
   /* ---- サマリー ---- */
@@ -338,8 +399,17 @@
     );
 
     let courses = allCourses;
-    if (filter === 'required')    courses = required;
+    if (filter === 'required')         courses = required;
     else if (filter === 'recommended') courses = recommended;
+    else if (filter === 'diag_priority') {
+      /* 診断連携：Phase1対象軸の講座を優先表示 */
+      const phase1Axes = _orgPlan
+        ? (_orgPlan.educationPlan?.phase1 || []).map(p => p.axisId)
+        : [];
+      courses = phase1Axes.length
+        ? allCourses.filter(c => phase1Axes.includes(c.axis))
+        : allCourses;
+    }
     else if (filter === 'in_progress') courses = allCourses.filter(c => progress[c.id]?.status === 'in_progress');
     else if (filter === 'completed')   courses = allCourses.filter(c => progress[c.id]?.status === 'completed');
     else if (filter === 'not_started') courses = allCourses.filter(c => !progress[c.id] || progress[c.id].status === 'not_started');
@@ -359,6 +429,23 @@
       const isReq  = required.some(r => r.id === c.id);
       const isRec  = !isReq && recommended.some(r => r.id === c.id);
 
+      /* 診断連携：軸スコアに基づく優先度バッジ */
+      let diagBadge = '';
+      let diagPriority = 0;
+      if (_orgPlan && _orgPlan.diagnosisScores) {
+        const axisScore = _orgPlan.diagnosisScores[c.axis];
+        const eduPlan   = _orgPlan.educationPlan || {};
+        const inPhase1  = (eduPlan.phase1 || []).some(p => p.axisId === c.axis);
+        const inPhase2  = (eduPlan.phase2 || []).some(p => p.axisId === c.axis);
+        if (inPhase1) {
+          diagBadge    = `<span class="badge badge-red" style="font-size:.65rem">🔴 診断優先</span>`;
+          diagPriority = 2;
+        } else if (inPhase2) {
+          diagBadge    = `<span class="badge badge-gold" style="font-size:.65rem">🟡 診断推奨</span>`;
+          diagPriority = 1;
+        }
+      }
+
       const statusBadge = status === 'completed'
         ? `<span class="badge badge-green">✅ 完了</span>`
         : status === 'in_progress'
@@ -374,12 +461,13 @@
       const pct = status === 'completed' ? 100 : status === 'in_progress' ? 50 : 0;
 
       return `
-      <div class="course-card ${status === 'completed' ? 'completed' : ''}">
-        <div class="course-card-header">
+      <div class="course-card ${status === 'completed' ? 'completed' : ''}" style="${diagPriority === 2 ? 'border-color:rgba(185,28,28,.3);' : ''}">
+        <div class="course-card-header" style="${diagPriority === 2 ? 'background:#fef2f2;' : ''}">
           <div class="course-card-chips">
             <span class="axis-chip" style="background:${AXIS_COLORS[c.axis]}">${AXIS_LABELS[c.axis]}</span>
             <span class="phase-chip phase-${c.phase}">Phase ${c.phase}</span>
             ${isReq ? `<span class="badge badge-red">🔴 必須</span>` : isRec ? `<span class="badge badge-gold">⭐ 推奨</span>` : ''}
+            ${diagBadge}
           </div>
           ${statusBadge}
         </div>
