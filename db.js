@@ -74,47 +74,47 @@ export async function saveQuizResult(uid, courseId, { score, total, passed, answ
 
 /* ----------------------------------------------------------
    ③ 組織全体の受講状況集計（管理者用）
-   N+1クエリ → collectionGroupで2回のクエリに最適化
-   ユーザ数n: 従来 2n回 → 改善後 2回
+   collectionGroupクエリで一括取得。
+   ルール未設定時はフォールバックとして空データを返す。
    ---------------------------------------------------------- */
 export async function getOrgProgress(users) {
-  /* 全ユーザのprogress・quizResultsをcollectionGroupで一括取得 */
-  const [progressSnap, quizSnap] = await Promise.all([
-    getDocs(collectionGroup(db, 'courses').withConverter ? 
-      query(collectionGroup(db, 'courses')) : 
-      collectionGroup(db, 'courses')),
-    getDocs(collectionGroup(db, 'courses')),
-  ]);
+  try {
+    /* progress と quizResults のサブコレクションは両方 "courses" という名前。
+       collectionGroup('courses') で一括取得し、パスで分類する。        */
+    const snap = await getDocs(query(collectionGroup(db, 'courses')));
 
-  /* progressデータをユーザID別に整理 */
-  const progressMap = {};
-  progressSnap.docs.forEach(d => {
-    /* path: progress/{uid}/courses/{courseId} */
-    const pathParts = d.ref.path.split('/');
-    if (pathParts[0] !== 'progress') return;
-    const uid      = pathParts[1];
-    const courseId = pathParts[3];
-    if (!progressMap[uid]) progressMap[uid] = {};
-    progressMap[uid][courseId] = d.data();
-  });
+    const progressMap = {};
+    const quizMap     = {};
 
-  /* quizResultsデータをユーザID別に整理 */
-  const quizMap = {};
-  quizSnap.docs.forEach(d => {
-    const pathParts = d.ref.path.split('/');
-    if (pathParts[0] !== 'quizResults') return;
-    const uid      = pathParts[1];
-    const courseId = pathParts[3];
-    if (!quizMap[uid]) quizMap[uid] = {};
-    quizMap[uid][courseId] = d.data();
-  });
+    snap.docs.forEach(d => {
+      const parts = d.ref.path.split('/');
+      // progress/{uid}/courses/{courseId}  → parts[0]='progress'
+      // quizResults/{uid}/courses/{courseId} → parts[0]='quizResults'
+      if (parts.length < 4) return;
+      const root     = parts[0];
+      const uid      = parts[1];
+      const courseId = parts[3];
 
-  /* ユーザリストとマージして返す */
-  return users.map(user => ({
-    ...user,
-    progress:  progressMap[user.uid]  || {},
-    quizzes:   quizMap[user.uid]      || {},
-  }));
+      if (root === 'progress') {
+        if (!progressMap[uid]) progressMap[uid] = {};
+        progressMap[uid][courseId] = d.data();
+      } else if (root === 'quizResults') {
+        if (!quizMap[uid]) quizMap[uid] = {};
+        quizMap[uid][courseId] = d.data();
+      }
+    });
+
+    return users.map(user => ({
+      ...user,
+      progress: progressMap[user.uid] || {},
+      quizzes:  quizMap[user.uid]     || {},
+    }));
+
+  } catch (e) {
+    console.warn('[getOrgProgress] collectionGroupクエリ失敗。Firestoreルールを確認してください:', e.code || e.message);
+    /* フォールバック: 進捗なしとして返す（画面は止めない） */
+    return users.map(user => ({ ...user, progress: {}, quizzes: {} }));
+  }
 }
 
 /* ----------------------------------------------------------
