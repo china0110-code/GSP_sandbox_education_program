@@ -339,8 +339,6 @@
     <button class="admin-tab" data-tab="roi">💹 ROIダッシュボード</button>
     <button class="admin-tab" data-tab="diagnosis">🔗 診断連携</button>
     <button class="admin-tab" data-tab="users">👥 ユーザ管理</button>
-    <button class="admin-tab" data-tab="register">➕ ユーザ登録</button>
-    <button class="admin-tab" data-tab="cert">🏆 修了証発行</button>
   </div>
 
   <!-- ① 受講状況レポート -->
@@ -504,9 +502,69 @@
   </div>
 
   <!-- ④ ユーザ管理 -->
+  <!-- ④ ユーザ管理 -->
   <div class="admin-panel" data-tab="users">
+
+    <!-- ユーザ一覧 -->
     <div class="card au">
-      <div class="card-head">登録ユーザ一覧</div>
+      <div class="card-head" style="justify-content:space-between">
+        <span>登録ユーザ一覧</span>
+        <button class="btn btn-primary btn-sm" onclick="toggleRegForm()">➕ 新規ユーザ登録</button>
+      </div>
+
+      <!-- 登録フォーム（折りたたみ） -->
+      <div id="regFormWrap" style="display:none;margin-bottom:24px;padding:20px;background:var(--slate);border-radius:var(--r-md);border:1px solid var(--border)">
+        <div style="font-weight:700;font-size:.9rem;color:var(--ink);margin-bottom:16px">新規ユーザ登録</div>
+
+        <div id="regErr" class="err-msg"></div>
+        <div id="regOk"  class="err-msg" style="background:#f0fbf5;border-color:#bbf7d0;color:var(--green)"></div>
+
+        <div class="form-grid">
+          <div class="fg">
+            <label>氏名 *</label>
+            <input type="text" id="regName" placeholder="山田 太郎">
+          </div>
+          <div class="fg">
+            <label>メールアドレス *</label>
+            <input type="email" id="regEmail" placeholder="taro@company.com">
+          </div>
+          <div class="fg">
+            <label>パスワード * （8文字以上）</label>
+            <input type="password" id="regPassword" placeholder="初期パスワード">
+          </div>
+          <div class="fg">
+            <label>ロール *</label>
+            <select id="regRole">
+              <option value="learner">学習者</option>
+              <option value="admin">管理者</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>部門</label>
+            <input type="text" id="regDept" placeholder="営業部、情報システム部 など">
+          </div>
+          <div class="fg">
+            <label>対象者区分 *</label>
+            <select id="regTarget">
+              <option value="all">全社員</option>
+              <option value="exec">経営層</option>
+              <option value="mgmt">管理職</option>
+              <option value="legal">法務・コンプライアンス担当</option>
+              <option value="it">情報システム部門</option>
+              <option value="dx">DX推進部門</option>
+              <option value="data_user">業務部門のデータ利活用担当</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+          <button class="btn btn-ghost btn-sm" onclick="clearRegForm()">クリア</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleRegForm()">閉じる</button>
+          <button class="btn btn-primary btn-sm" id="regBtn" onclick="registerUser()">登録する</button>
+        </div>
+      </div>
+
+      <!-- ユーザ一覧テーブル -->
       <div class="tbl-toolbar">
         <input class="tbl-search" type="text" placeholder="名前・メールで絞り込み…"
                oninput="filterUserTable(this.value)">
@@ -527,91 +585,6 @@
             <tr><td colspan="6" style="text-align:center;color:var(--muted)">読み込み中…</td></tr>
           </tbody>
         </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ④ ユーザ登録 -->
-  <div class="admin-panel" data-tab="register">
-    <div class="card au" style="max-width:640px">
-      <div class="card-head">新規ユーザ登録</div>
-
-      <div id="regErr" class="err-msg"></div>
-      <div id="regOk" class="err-msg" style="background:#f0fbf5;border-color:#bbf7d0;color:var(--green)"></div>
-
-      <div class="form-grid">
-        <div class="fg">
-          <label>氏名 *</label>
-          <input type="text" id="regName" placeholder="山田 太郎">
-        </div>
-        <div class="fg">
-          <label>メールアドレス *</label>
-          <input type="email" id="regEmail" placeholder="taro@company.com">
-        </div>
-        <div class="fg">
-          <label>パスワード * （8文字以上）</label>
-          <input type="password" id="regPassword" placeholder="初期パスワード">
-        </div>
-        <div class="fg">
-          <label>ロール *</label>
-          <select id="regRole">
-            <option value="learner">学習者</option>
-            <option value="admin">管理者</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>部門</label>
-          <input type="text" id="regDept" placeholder="営業部、情報システム部 など">
-        </div>
-        <div class="fg">
-          <label>対象者区分 *</label>
-          <select id="regTarget">
-            <option value="all">全社員</option>
-            <option value="exec">経営層</option>
-            <option value="mgmt">管理職</option>
-            <option value="legal">法務・コンプライアンス担当</option>
-            <option value="it">情報システム部門</option>
-            <option value="dx">DX推進部門</option>
-            <option value="data_user">業務部門のデータ利活用担当</option>
-          </select>
-        </div>
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
-        <button class="btn btn-ghost" onclick="clearRegForm()">クリア</button>
-        <button class="btn btn-primary" id="regBtn" onclick="registerUser()">登録する</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ⑤ 修了証発行 -->
-  <div class="admin-panel" data-tab="cert">
-    <div class="card au" style="max-width:640px">
-      <div class="card-head">修了証発行</div>
-      <p style="font-size:.84rem;color:var(--muted);margin-bottom:20px;line-height:1.7">
-        講座を完了したユーザに対して修了証を発行します。印刷またはPDFとして保存できます。
-      </p>
-
-      <div class="form-grid">
-        <div class="fg">
-          <label>ユーザを選択</label>
-          <select id="certUser" onchange="updateCertLink()"></select>
-        </div>
-        <div class="fg">
-          <label>講座を選択</label>
-          <select id="certCourse" onchange="updateCertLink()"></select>
-        </div>
-      </div>
-
-      <div id="certLinkArea" style="display:none;margin-bottom:24px">
-        <div style="background:var(--slate);border-radius:var(--r-sm);padding:14px;font-size:.83rem;color:var(--muted);margin-bottom:12px">
-          <span id="certLinkStatus"></span>
-        </div>
-        <div style="display:flex;justify-content:flex-end">
-          <a id="certOpenBtn" href="#" target="_blank" class="btn btn-gold">
-            🏆 修了証を開く（新しいタブ）
-          </a>
-        </div>
       </div>
     </div>
   </div>
@@ -711,7 +684,6 @@
     confirmDelete, closeModal,
     openEditModal, closeEditModal, saveEdit,
   } from "./admin-users.js";
-  import { renderCertSelects } from "./admin-cert.js";
   import { renderROI, renderCostSimulation } from "./admin-roi.js";
 
   let profile    = null;
@@ -736,7 +708,6 @@
     renderReport(allUsers, allCourses, orgData);
     renderROI(allUsers, allCourses, orgData);
     renderUserTable(allUsers);
-    renderCertSelects(allUsers, allCourses);
 
     /* 診断連携ステータス — エラーでも必ずUI更新する */
     let orgPlan = null;
@@ -747,6 +718,18 @@
     }
     renderDiagnosisStatus(orgPlan);
   }
+
+  /* ---- 登録フォーム開閉 ---- */
+  window.toggleRegForm = function() {
+    const wrap = document.getElementById('regFormWrap');
+    const isHidden = wrap.style.display === 'none';
+    wrap.style.display = isHidden ? '' : 'none';
+    if (isHidden) {
+      document.getElementById('regName').focus();
+      document.getElementById('regErr').classList.remove('show');
+      document.getElementById('regOk').classList.remove('show');
+    }
+  };
 
   /* ---- レポートフィルタ ---- */
   window.filterReportTable = function(q) {
@@ -773,7 +756,6 @@
       orgData    = await getOrgProgress(allUsers);
       renderUserTable(allUsers);
       renderReport(allUsers, allCourses, orgData);
-      renderCertSelects(allUsers, allCourses);
     }
   };
 
@@ -785,7 +767,6 @@
       orgData  = orgData.filter(u => u.uid !== deletedUid);
       renderUserTable(allUsers);
       renderReport(allUsers, allCourses, orgData);
-      renderCertSelects(allUsers, allCourses);
     });
   };
 
