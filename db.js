@@ -116,3 +116,50 @@ export async function getOrgProgress(users) {
     quizzes:   quizMap[user.uid]      || {},
   }));
 }
+
+/* ----------------------------------------------------------
+   組織診断プラン — 保存・取得・削除
+   Firestoreパス: orgPlan/main（シングルドキュメント）
+   ---------------------------------------------------------- */
+
+/**
+ * 診断JSONをFirestoreに保存する（管理者専用）
+ * roadmap は施策テキストが大量でFirestoreの1MB制限に引っかかるため除外する。
+ * 教育プランと診断スコア・KPIサマリーのみ保存。
+ */
+export async function saveOrgPlan(planData) {
+  // eslint-disable-next-line no-unused-vars
+  const { roadmap, ...saveable } = planData;   // roadmapを除いて保存
+  const ref = doc(db, 'orgPlan', 'main');
+  await setDoc(ref, {
+    ...saveable,
+    importedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * 組織診断プランを取得する
+ * Firestoreルールで未許可の場合も null を返してアプリを止めない。
+ * @returns {Object|null} プランデータ or null
+ */
+export async function getOrgPlan() {
+  try {
+    const ref  = doc(db, 'orgPlan', 'main');
+    const snap = await getDoc(ref);
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.warn('[getOrgPlan] Firestoreアクセスエラー（ルール未設定の可能性）:', e.code || e.message);
+    return null;
+  }
+}
+
+/**
+ * 組織診断プランを削除する（管理者専用）
+ */
+export async function deleteOrgPlan() {
+  const { deleteDoc } = await import(
+    'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'
+  );
+  const ref = doc(db, 'orgPlan', 'main');
+  await deleteDoc(ref);
+}
